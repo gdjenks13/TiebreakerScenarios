@@ -1,6 +1,7 @@
 import type { ConferenceData, Game, Scenario, TeamRecord } from "../types";
 import { MAX_SIMULATION } from "./constants";
-import { computeStandings, applyTieBreakers } from "./standings";
+import { computeStandings } from "./standings";
+import { applyTieBreakers } from "./tiebreakers";
 
 export function getUnplayedGames(conf: ConferenceData): Game[] {
   return conf.games.filter((g) => !g.played);
