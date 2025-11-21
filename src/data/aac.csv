@@ -1,0 +1,58 @@
+Winner,WPts,Loser,LPts
+Navy,38,Alabama-Birmingham,24
+Navy,42,Tulsa,23
+Rice,28,Charlotte,17
+North Texas,45,Army,38
+East Carolina,28,Army,6
+Memphis,55,Florida Atlantic,26
+Navy,21,Rice,13
+Tulane,31,Tulsa,14
+South Florida,54,Charlotte,26
+Army,31,Alabama-Birmingham,13
+Florida Atlantic,27,Rice,21
+Memphis,45,Tulsa,7
+Temple,27,Texas-San Antonio,21
+Tulane,26,East Carolina,19
+South Florida,63,North Texas,36
+Army,24,Charlotte,7
+Florida Atlantic,53,Alabama-Birmingham,33
+Navy,32,Temple,31
+Texas-San Antonio,61,Rice,13
+East Carolina,41,Tulsa,27
+Alabama-Birmingham,31,Memphis,24
+North Texas,55,Texas-San Antonio,17
+South Florida,48,Florida Atlantic,13
+Temple,49,Charlotte,14
+Tulane,24,Army,17
+North Texas,54,Charlotte,20
+Memphis,34,South Florida,31
+Navy,42,Florida Atlantic,32
+Temple,38,Tulsa,37
+Texas-San Antonio,48,Tulane,26
+Memphis,38,Rice,14
+East Carolina,45,Temple,14
+North Texas,31,Navy,17
+South Florida,55,Texas-San Antonio,23
+Tulane,38,Memphis,32
+Army,14,Temple,13
+East Carolina,48,Charlotte,22
+Florida Atlantic,40,Tulsa,21
+Rice,24,Alabama-Birmingham,17
+East Carolina,31,Memphis,27
+Navy,41,South Florida,38
+North Texas,53,Alabama-Birmingham,24
+Texas-San Antonio,28,Charlotte,7
+Tulane,35,Florida Atlantic,24
+East Carolina,,Texas-San Antonio,
+North Texas,,Rice,
+South Florida,,Alabama-Birmingham,
+Tulane,,Temple,
+Tulsa,,Army,
+Navy,,Memphis,
+Temple,,North Texas,
+Alabama-Birmingham,,Tulsa,
+Army,,Texas-San Antonio,
+Charlotte,,Tulane,
+East Carolina,,Florida Atlantic,
+Rice,,South Florida,
+Army,,Navy,
