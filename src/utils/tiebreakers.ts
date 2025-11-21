@@ -1,287 +1,1109 @@
-import type { Game, TeamRecord } from "@/types";
-import { ratings } from "./dataLoader";
+import type { Game, TieBreakerResult } from "@/types";
 
-// Basic head-to-head for two-team tie
-export function headToHeadRecord(
-  team: string,
-  opponent: string,
-  games: Game[]
-) {
-  let wins = 0;
-  let losses = 0;
-  games.forEach((g) => {
-    if (!g.played) return;
-    if (g.winner === team && g.loser === opponent) wins++;
-    if (g.winner === opponent && g.loser === team) losses++;
-  });
-  return { wins, losses };
+/* Two Teams Head to Head 
+   teams: array of size two with the team names
+   games: array of Games of size X to be searched
+   returns: string of the winning team, or null if two teams did not play     
+*/
+function headToHead(teams: string[], games: Game[]): string | null {
+  if (teams.length !== 2) return null;
+
+  const game = games.find(
+    (g) => g.played && teams.includes(g.winner) && teams.includes(g.loser)
+  );
+
+  return game ? game.winner : null;
 }
 
-// Win percentage among a set of opponents
-export function winPctAgainst(
-  team: string,
-  opponents: Set<string>,
+/* Round Robin - More than Two Teams - Only Two Scenarios
+   This is used for the Big 10 and the Big 12
+   teams: array of size greater than two with the team names
+   games: array of Games of size X to be searched
+   returns: string of a team, if that is the winner or loser of the round robin    
+*/
+function roundRobin_twoScenarios(
+  teams: string[],
   games: Game[]
-) {
-  let wins = 0;
-  let losses = 0;
-  opponents.forEach((opp) => {
-    games.forEach((g) => {
-      if (!g.played) return;
-      if (g.winner === team && g.loser === opp) wins++;
-      if (g.winner === opp && g.loser === team) losses++;
+): TieBreakerResult | null {
+  if (teams.length < 3) return null;
+
+  const roundRobinGames = games.filter(
+    (g) => g.played && teams.includes(g.winner) && teams.includes(g.loser)
+  );
+
+  const n = teams.length;
+  const expectedGames = (n * (n - 1)) / 2;
+
+  // Count wins for each team
+  const winCounts = new Map<string, number>();
+  teams.forEach((team) => winCounts.set(team, 0));
+
+  roundRobinGames.forEach((game) => {
+    winCounts.set(game.winner, (winCounts.get(game.winner) || 0) + 1);
+  });
+
+  // Case 1: Complete round robin
+  if (roundRobinGames.length === expectedGames) {
+    let maxWins = -1;
+    let winningTeam: string | null = null;
+    let isTied: boolean = true;
+
+    winCounts.forEach((wins, team) => {
+      if (wins > maxWins) {
+        maxWins = wins;
+        winningTeam = team;
+        isTied = false;
+      } else if (wins === maxWins) {
+        isTied = true;
+      }
     });
-  });
-  const total = wins + losses;
-  if (total === 0) return null; // no games
-  return wins / total;
+
+    if (!isTied && winningTeam) {
+      return { team: winningTeam, winner: true };
+    }
+  }
+
+  // Case 2: Incomplete round robin - team beat all others
+  const teamBeatenAll = teams.find(
+    (team) => winCounts.get(team) === teams.length - 1
+  );
+
+  if (teamBeatenAll) {
+    return { team: teamBeatenAll, winner: true };
+  }
+
+  return null;
 }
 
-// Rule A: head-to-head among tied teams. Input list of team names
-export function applyRuleA(
-  tiedTeams: string[],
+/* Round Robin - More than Two Teams - Three Scenarios
+   This is used for the ACC and the SEC
+   teams: array of size greater than two with the team names
+   games: array of Games of size X to be searched
+   returns: string of a team, if that is the winner or loser of the round robin    
+*/
+function roundRobin_threeScenarios(
+  teams: string[],
   games: Game[]
-): { ranking: string[]; remainingTies: string[][] } {
-  if (tiedTeams.length <= 1) return { ranking: tiedTeams, remainingTies: [] };
-  // compute head-to-head percentage among the tied teams for each team.
-  const percents: Map<string, number | null> = new Map();
-  tiedTeams.forEach((t) => {
+): TieBreakerResult | null {
+  if (teams.length < 3) return null;
+
+  const roundRobinGames = games.filter(
+    (g) => g.played && teams.includes(g.winner) && teams.includes(g.loser)
+  );
+
+  const n = teams.length;
+  const expectedGames = (n * (n - 1)) / 2;
+
+  // Count wins for each team
+  const winCounts = new Map<string, number>();
+  teams.forEach((team) => winCounts.set(team, 0));
+
+  roundRobinGames.forEach((game) => {
+    winCounts.set(game.winner, (winCounts.get(game.winner) || 0) + 1);
+  });
+
+  // Case 1: Complete round robin
+  if (roundRobinGames.length === expectedGames) {
+    let maxWins = -1;
+    let winningTeam: string | null = null;
+    let isTied: boolean = true;
+
+    winCounts.forEach((wins, team) => {
+      if (wins > maxWins) {
+        maxWins = wins;
+        winningTeam = team;
+        isTied = false;
+      } else if (wins === maxWins) {
+        isTied = true;
+      }
+    });
+
+    if (!isTied && winningTeam) {
+      return { team: winningTeam, winner: true };
+    }
+  }
+
+  // Case 2: Incomplete round robin - team beat all others
+  const teamBeatenAll = teams.find(
+    (team) => winCounts.get(team) === teams.length - 1
+  );
+
+  if (teamBeatenAll) {
+    return { team: teamBeatenAll, winner: true };
+  }
+
+  // Case 3: Incomplete round robin - team lost to all others
+  const lossCounts = new Map<string, number>();
+  teams.forEach((team) => lossCounts.set(team, 0));
+
+  roundRobinGames.forEach((game) => {
+    lossCounts.set(game.loser, (lossCounts.get(game.loser) || 0) + 1);
+  });
+
+  const teamLostToAll = teams.find(
+    (team) => lossCounts.get(team) === teams.length - 1
+  );
+
+  if (teamLostToAll) {
+    return { team: teamLostToAll, winner: false };
+  }
+
+  return null;
+}
+
+/* Win Percentage Against Common Opponents - Two or more Teams
+  teams: array of size greater than or equal to two with the team names
+  games: array of Games of size X to be searched
+  returns: string of a winning team
+*/
+function winPctCommonOpponents(
+  teams: string[],
+  games: Game[]
+): TieBreakerResult | null {
+  // Find common opponents (teams that all tied teams have played)
+  const opponentSets: Map<string, Set<string>> = new Map();
+
+  teams.forEach((team) => {
+    const opponents = new Set<string>();
+    games.forEach((g) => {
+      if (g.played) {
+        if (g.winner === team && !teams.includes(g.loser)) {
+          opponents.add(g.loser);
+        } else if (g.loser === team && !teams.includes(g.winner)) {
+          opponents.add(g.winner);
+        }
+      }
+    });
+    opponentSets.set(team, opponents);
+  });
+
+  // Find intersection of all opponent sets (common opponents)
+  const commonOpponents = new Set<string>();
+  if (opponentSets.size > 0) {
+    const firstSet = opponentSets.values().next().value as Set<string>;
+    if (firstSet) {
+      firstSet.forEach((opp: string) => {
+        let isCommon = true;
+        opponentSets.forEach((oppSet) => {
+          if (!oppSet.has(opp)) isCommon = false;
+        });
+        if (isCommon) commonOpponents.add(opp);
+      });
+    }
+  }
+
+  // If no common opponents, can't apply this rule
+  if (commonOpponents.size === 0) return null;
+
+  // Count wins/losses for each team against common opponents
+  const records = new Map<string, { wins: number; losses: number }>();
+  teams.forEach((team) => records.set(team, { wins: 0, losses: 0 }));
+
+  games.forEach((g) => {
+    if (g.played) {
+      if (teams.includes(g.winner) && commonOpponents.has(g.loser)) {
+        const rec = records.get(g.winner)!;
+        rec.wins++;
+      } else if (teams.includes(g.loser) && commonOpponents.has(g.winner)) {
+        const rec = records.get(g.loser)!;
+        rec.losses++;
+      }
+    }
+  });
+
+  // Calculate win percentages
+  let maxPct = -1;
+  let winningTeam: string | null = null;
+  let isTied = true;
+
+  records.forEach((rec, team) => {
+    const total = rec.wins + rec.losses;
+    if (total === 0) return; // Skip teams with no games against common opponents
+    const pct = rec.wins / total;
+
+    if (pct > maxPct) {
+      maxPct = pct;
+      winningTeam = team;
+      isTied = false;
+    } else if (pct === maxPct) {
+      isTied = true;
+    }
+  });
+
+  if (!isTied && winningTeam && maxPct >= 0) {
+    return { team: winningTeam, winner: true };
+  }
+
+  return null;
+}
+
+/* Wins Against Common Opponents by Order of Finish - Two or more Teams
+  teams: array of size greater than or equal to two with the team names
+  games: array of Games of size X to be searched
+  returns: string of a winning team
+*/
+function winOrderOfFinish(
+  teams: string[],
+  games: Game[]
+): TieBreakerResult | null {
+  const allTeams = new Set<string>();
+  games.forEach((g) => {
+    if (g.played) {
+      allTeams.add(g.winner);
+      allTeams.add(g.loser);
+    }
+  });
+
+  const otherTeams = Array.from(allTeams).filter(
+    (team) => !teams.includes(team)
+  );
+
+  const winCounts = new Map<string, number>();
+  [...teams, ...otherTeams].forEach((team) => winCounts.set(team, 0));
+
+  games.forEach((g) => {
+    if (g.played) {
+      winCounts.set(g.winner, (winCounts.get(g.winner) || 0) + 1);
+    }
+  });
+
+  const sortedOtherTeams = otherTeams.sort((a, b) => {
+    const winsA = winCounts.get(a) || 0;
+    const winsB = winCounts.get(b) || 0;
+    return winsB - winsA;
+  });
+
+  // Get the win count of the tied teams
+  const tiedTeamsMaxWins = Math.max(...teams.map((t) => winCounts.get(t) || 0));
+
+  // Filter 'sortedOtherTeams' to only teams with fewer wins than the tied teams
+  const nextHighestTeams = sortedOtherTeams.filter(
+    (team) => (winCounts.get(team) || 0) < tiedTeamsMaxWins
+  );
+
+  let i = 0;
+  while (i < nextHighestTeams.length) {
+    // Find the group of teams tied at this position
+    const currentWins = winCounts.get(nextHighestTeams[i]) || 0;
+    const tiedGroup: string[] = [];
+
+    while (
+      i < nextHighestTeams.length &&
+      (winCounts.get(nextHighestTeams[i]) || 0) === currentWins
+    ) {
+      tiedGroup.push(nextHighestTeams[i]);
+      i++;
+    }
+
+    // Calculate win percentage for each tied team against this group
+    const winPercentages = new Map<string, number>();
+
+    teams.forEach((team) => {
+      let wins = 0;
+      let totalGames = 0;
+
+      games.forEach((g) => {
+        if (g.played && tiedGroup.includes(g.winner) && g.loser === team) {
+          totalGames++;
+        } else if (
+          g.played &&
+          tiedGroup.includes(g.loser) &&
+          g.winner === team
+        ) {
+          wins++;
+          totalGames++;
+        }
+      });
+
+      const winPct = totalGames > 0 ? wins / totalGames : 0;
+      winPercentages.set(team, winPct);
+    });
+
+    // Check if there's a clear winner
+    let maxPct = -1;
+    let winningTeam: string | null = null;
+    let countAtMax = 0;
+
+    winPercentages.forEach((pct, team) => {
+      if (pct > maxPct) {
+        maxPct = pct;
+        winningTeam = team;
+        countAtMax = 1;
+      } else if (pct === maxPct) {
+        countAtMax++;
+      }
+    });
+
+    if (countAtMax === 1 && winningTeam && maxPct > 0) {
+      return { team: winningTeam, winner: true };
+    }
+  }
+  return null;
+}
+
+/* Combined Conference Opponent Win Percentage - Two or more Teams
+  teams: array of size greater than or equal to two with the team names
+  games: array of Games of size X to be searched
+  returns: string of a winning team
+*/
+function combinedOpponentWinPct(
+  teams: string[],
+  games: Game[]
+): TieBreakerResult | null {
+  if (teams.length < 2) return null;
+
+  const teamScores = new Map<string, number>();
+
+  teams.forEach((team) => {
+    const opponents = new Set<string>();
+    games.forEach((g) => {
+      if (g.played) {
+        if (g.winner === team) {
+          opponents.add(g.loser);
+        } else if (g.loser === team) {
+          opponents.add(g.winner);
+        }
+      }
+    });
+
+    let totalOpponentWins = 0;
+    opponents.forEach((opponent) => {
+      games.forEach((g) => {
+        if (g.played && g.winner === opponent) {
+          totalOpponentWins++;
+        }
+      });
+    });
+
+    teamScores.set(team, totalOpponentWins);
+  });
+
+  // Find team with highest combined opponent wins
+  let maxWins = -1;
+  let winningTeam: string | null = null;
+  let isTied = true;
+
+  teamScores.forEach((wins, team) => {
+    if (wins > maxWins) {
+      maxWins = wins;
+      winningTeam = team;
+      isTied = false;
+    } else if (wins === maxWins) {
+      isTied = true;
+    }
+  });
+
+  if (!isTied && winningTeam) {
+    return { team: winningTeam, winner: true };
+  }
+
+  return null;
+}
+
+/* --- Helper Functions to Apply Tiebreakers in order
+   based on conference rules
+*/
+
+// AAC Tiebreaker Rules
+function tiebreakers_aac(teams: string[], games: Game[]) {
+  const applied = new Set<string>();
+  const top: string[] = [];
+  const bottom: string[] = [];
+  let remaining = teams.slice();
+
+  while (remaining.length > 1) {
+    let progressMade = false;
+
+    // Rule A: Head-to-head (two teams) or round robin (3+)
+    if (remaining.length === 2) {
+      const winner = headToHead(remaining, games);
+      if (winner) {
+        applied.add("A");
+        top.push(winner);
+        remaining = remaining.filter((t) => t !== winner);
+        progressMade = true;
+        continue;
+      }
+    } else {
+      const rr = roundRobin_twoScenarios(remaining, games);
+      if (rr) {
+        applied.add("A");
+        top.push(rr.team);
+        remaining = remaining.filter((t) => t !== rr.team);
+        progressMade = true;
+        continue;
+      }
+    }
+
+    // Rule B: Win % against common opponents
+    const wc = winPctCommonOpponents(remaining, games);
+    if (wc) {
+      applied.add("B");
+      if (wc.winner) top.push(wc.team);
+      else bottom.push(wc.team);
+      remaining = remaining.filter((t) => t !== wc.team);
+      progressMade = true;
+      continue;
+    }
+
+    // Rule C: Combined opponent win pct
+    const co = combinedOpponentWinPct(remaining, games);
+    if (co) {
+      applied.add("C");
+      if (co.winner) top.push(co.team);
+      else bottom.push(co.team);
+      remaining = remaining.filter((t) => t !== co.team);
+      progressMade = true;
+      continue;
+    }
+
+    // No rule applied - use random ordering and break
+    if (!progressMade) {
+      applied.add("G");
+      // Fisher-Yates shuffle for better randomness
+      for (let i = remaining.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [remaining[i], remaining[j]] = [remaining[j], remaining[i]];
+      }
+      top.push(...remaining);
+      remaining = [];
+      break;
+    }
+  }
+
+  if (remaining.length === 1) top.push(remaining[0]);
+  return { order: [...top, ...bottom], applied: Array.from(applied) };
+}
+
+// ACC Tiebreaker Rules
+function tiebreakers_acc(teams: string[], games: Game[]) {
+  const applied = new Set<string>();
+  const top: string[] = [];
+  const bottom: string[] = [];
+  let remaining = teams.slice();
+
+  while (remaining.length > 1) {
+    let progressMade = false;
+
+    // Rule A: Head-to-head (two teams) or round robin (3+)
+    if (remaining.length === 2) {
+      const winner = headToHead(remaining, games);
+      if (winner) {
+        applied.add("A");
+        top.push(winner);
+        remaining = remaining.filter((t) => t !== winner);
+        progressMade = true;
+        continue;
+      }
+    } else {
+      const rr = roundRobin_threeScenarios(remaining, games);
+      if (rr) {
+        applied.add("A");
+        if (rr.winner) {
+          top.push(rr.team);
+        } else {
+          bottom.push(rr.team);
+        }
+        remaining = remaining.filter((t) => t !== rr.team);
+        progressMade = true;
+        continue;
+      }
+    }
+
+    // Rule B: Win % against common opponents
+    const wc = winPctCommonOpponents(remaining, games);
+    if (wc) {
+      applied.add("B");
+      if (wc.winner) top.push(wc.team);
+      else bottom.push(wc.team);
+      remaining = remaining.filter((t) => t !== wc.team);
+      progressMade = true;
+      continue;
+    }
+
+    // Rule C: Win order of finish
+    const wo = winOrderOfFinish(remaining, games);
+    if (wo) {
+      applied.add("C");
+      if (wo.winner) top.push(wo.team);
+      else bottom.push(wo.team);
+      remaining = remaining.filter((t) => t !== wo.team);
+      progressMade = true;
+      continue;
+    }
+
+    // Rule D: Combined opponent win pct
+    const co = combinedOpponentWinPct(remaining, games);
+    if (co) {
+      applied.add("D");
+      if (co.winner) top.push(co.team);
+      else bottom.push(co.team);
+      remaining = remaining.filter((t) => t !== co.team);
+      progressMade = true;
+      continue;
+    }
+
+    // No rule applied - use random ordering and break
+    if (!progressMade) {
+      applied.add("G");
+      for (let i = remaining.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [remaining[i], remaining[j]] = [remaining[j], remaining[i]];
+      }
+      top.push(...remaining);
+      remaining = [];
+      break;
+    }
+  }
+
+  if (remaining.length === 1) top.push(remaining[0]);
+  return { order: [...top, ...bottom], applied: Array.from(applied) };
+}
+
+// Big 10 Tiebreaker Rules
+function tiebreakers_big10(teams: string[], games: Game[]) {
+  const applied = new Set<string>();
+  const top: string[] = [];
+  const bottom: string[] = [];
+  let remaining = teams.slice();
+
+  while (remaining.length > 1) {
+    let progressMade = false;
+
+    // Rule A: Head-to-head (two teams) or round robin (3+)
+    if (remaining.length === 2) {
+      const winner = headToHead(remaining, games);
+      if (winner) {
+        applied.add("A");
+        top.push(winner);
+        remaining = remaining.filter((t) => t !== winner);
+        progressMade = true;
+        continue;
+      }
+    } else {
+      const rr = roundRobin_twoScenarios(remaining, games);
+      if (rr) {
+        applied.add("A");
+        top.push(rr.team);
+        remaining = remaining.filter((t) => t !== rr.team);
+        progressMade = true;
+        continue;
+      }
+    }
+
+    // Rule B: Win % against common opponents
+    const wc = winPctCommonOpponents(remaining, games);
+    if (wc) {
+      applied.add("B");
+      if (wc.winner) top.push(wc.team);
+      else bottom.push(wc.team);
+      remaining = remaining.filter((t) => t !== wc.team);
+      progressMade = true;
+      continue;
+    }
+
+    // Rule C: Win order of finish
+    const wo = winOrderOfFinish(remaining, games);
+    if (wo) {
+      applied.add("C");
+      if (wo.winner) top.push(wo.team);
+      else bottom.push(wo.team);
+      remaining = remaining.filter((t) => t !== wo.team);
+      progressMade = true;
+      continue;
+    }
+
+    // Rule D: Combined opponent win pct
+    const co = combinedOpponentWinPct(remaining, games);
+    if (co) {
+      applied.add("D");
+      if (co.winner) top.push(co.team);
+      else bottom.push(co.team);
+      remaining = remaining.filter((t) => t !== co.team);
+      progressMade = true;
+      continue;
+    }
+
+    // No rule applied - use random ordering and break
+    if (!progressMade) {
+      applied.add("G");
+      for (let i = remaining.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [remaining[i], remaining[j]] = [remaining[j], remaining[i]];
+      }
+      top.push(...remaining);
+      remaining = [];
+      break;
+    }
+  }
+
+  if (remaining.length === 1) top.push(remaining[0]);
+  return { order: [...top, ...bottom], applied: Array.from(applied) };
+}
+
+// Big 12 Tiebreaker Rules
+function tiebreakers_big12(teams: string[], games: Game[]) {
+  const applied = new Set<string>();
+  const top: string[] = [];
+  const bottom: string[] = [];
+  let remaining = teams.slice();
+
+  while (remaining.length > 1) {
+    let progressMade = false;
+
+    // Rule A: Head-to-head (two teams) or round robin (3+)
+    if (remaining.length === 2) {
+      const winner = headToHead(remaining, games);
+      if (winner) {
+        applied.add("A");
+        top.push(winner);
+        remaining = remaining.filter((t) => t !== winner);
+        progressMade = true;
+        continue;
+      }
+    } else {
+      const rr = roundRobin_twoScenarios(remaining, games);
+      if (rr) {
+        applied.add("A");
+        top.push(rr.team);
+        remaining = remaining.filter((t) => t !== rr.team);
+        progressMade = true;
+        continue;
+      }
+    }
+
+    // Rule B: Win % against common opponents
+    const wc = winPctCommonOpponents(remaining, games);
+    if (wc) {
+      applied.add("B");
+      if (wc.winner) top.push(wc.team);
+      else bottom.push(wc.team);
+      remaining = remaining.filter((t) => t !== wc.team);
+      progressMade = true;
+      continue;
+    }
+
+    // Rule C: Win order of finish
+    const wo = winOrderOfFinish(remaining, games);
+    if (wo) {
+      applied.add("C");
+      if (wo.winner) top.push(wo.team);
+      else bottom.push(wo.team);
+      remaining = remaining.filter((t) => t !== wo.team);
+      progressMade = true;
+      continue;
+    }
+
+    // Rule D: Combined opponent win pct
+    const co = combinedOpponentWinPct(remaining, games);
+    if (co) {
+      applied.add("D");
+      if (co.winner) top.push(co.team);
+      else bottom.push(co.team);
+      remaining = remaining.filter((t) => t !== co.team);
+      progressMade = true;
+      continue;
+    }
+
+    // No rule applied - use random ordering and break
+    if (!progressMade) {
+      applied.add("G");
+      for (let i = remaining.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [remaining[i], remaining[j]] = [remaining[j], remaining[i]];
+      }
+      top.push(...remaining);
+      remaining = [];
+      break;
+    }
+  }
+
+  if (remaining.length === 1) top.push(remaining[0]);
+  return { order: [...top, ...bottom], applied: Array.from(applied) };
+}
+
+// Mountain West Tiebreaker Rules
+function tiebreakers_mw(teams: string[], games: Game[]) {
+  const applied = new Set<string>();
+  const top: string[] = [];
+  const bottom: string[] = [];
+  let remaining = teams.slice();
+
+  while (remaining.length > 1) {
+    let progressMade = false;
+
+    // Rule A: Head-to-head (two teams) or round robin (3+)
+    if (remaining.length === 2) {
+      const winner = headToHead(remaining, games);
+      if (winner) {
+        applied.add("A");
+        top.push(winner);
+        remaining = remaining.filter((t) => t !== winner);
+        progressMade = true;
+        continue;
+      }
+    } else {
+      const rr = roundRobin_twoScenarios(remaining, games);
+      if (rr) {
+        applied.add("A");
+        top.push(rr.team);
+        remaining = remaining.filter((t) => t !== rr.team);
+        progressMade = true;
+        continue;
+      }
+    }
+
+    // Rule B: Win order of finish (NOTE: MW does this BEFORE common opponents)
+    const wo = winOrderOfFinish(remaining, games);
+    if (wo) {
+      applied.add("B");
+      if (wo.winner) top.push(wo.team);
+      else bottom.push(wo.team);
+      remaining = remaining.filter((t) => t !== wo.team);
+      progressMade = true;
+      continue;
+    }
+
+    // Rule C: Win % against common opponents
+    const wc = winPctCommonOpponents(remaining, games);
+    if (wc) {
+      applied.add("C");
+      if (wc.winner) top.push(wc.team);
+      else bottom.push(wc.team);
+      remaining = remaining.filter((t) => t !== wc.team);
+      progressMade = true;
+      continue;
+    }
+
+    // No rule applied - use random ordering and break
+    if (!progressMade) {
+      applied.add("G");
+      for (let i = remaining.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [remaining[i], remaining[j]] = [remaining[j], remaining[i]];
+      }
+      top.push(...remaining);
+      remaining = [];
+      break;
+    }
+  }
+
+  if (remaining.length === 1) top.push(remaining[0]);
+  return { order: [...top, ...bottom], applied: Array.from(applied) };
+}
+
+// Sun Belt Conference Tiebreaker Rules (with divisions)
+function tiebreakers_sbc(teams: string[], games: Game[]) {
+  const eastDivision = [
+    "James Madison",
+    "Coastal Carolina",
+    "Old Dominion",
+    "Georgia Southern",
+    "Marshall",
+    "App State",
+    "Georgia State",
+  ];
+  const westDivision = [
+    "Southern Miss",
+    "Troy",
+    "Arkansas State",
+    "Louisiana",
+    "South Alabama",
+    "Texas State",
+    "ULM",
+  ];
+
+  // Check if all teams are from the same division
+  const allEast = teams.every((t) => eastDivision.includes(t));
+  const allWest = teams.every((t) => westDivision.includes(t));
+
+  // If all teams are from the same division, use standard tiebreakers
+  if (allEast || allWest) {
+    const applied = new Set<string>();
+    const top: string[] = [];
+    const bottom: string[] = [];
+    let remaining = teams.slice();
+
+    while (remaining.length > 1) {
+      let progressMade = false;
+
+      // Rule A: Head-to-head (two teams) or round robin (3+)
+      if (remaining.length === 2) {
+        const winner = headToHead(remaining, games);
+        if (winner) {
+          applied.add("A");
+          top.push(winner);
+          remaining = remaining.filter((t) => t !== winner);
+          progressMade = true;
+          continue;
+        }
+      } else {
+        const rr = roundRobin_twoScenarios(remaining, games);
+        if (rr) {
+          applied.add("A");
+          top.push(rr.team);
+          remaining = remaining.filter((t) => t !== rr.team);
+          progressMade = true;
+          continue;
+        }
+      }
+
+      // Rule B: Win % against common opponents
+      const wc = winPctCommonOpponents(remaining, games);
+      if (wc) {
+        applied.add("B");
+        if (wc.winner) top.push(wc.team);
+        else bottom.push(wc.team);
+        remaining = remaining.filter((t) => t !== wc.team);
+        progressMade = true;
+        continue;
+      }
+
+      // Rule C: Combined opponent win pct
+      const co = combinedOpponentWinPct(remaining, games);
+      if (co) {
+        applied.add("C");
+        if (co.winner) top.push(co.team);
+        else bottom.push(co.team);
+        remaining = remaining.filter((t) => t !== co.team);
+        progressMade = true;
+        continue;
+      }
+
+      // No rule applied - use random ordering and break
+      if (!progressMade) {
+        applied.add("G");
+        for (let i = remaining.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [remaining[i], remaining[j]] = [remaining[j], remaining[i]];
+        }
+        top.push(...remaining);
+        remaining = [];
+        break;
+      }
+    }
+
+    if (remaining.length === 1) top.push(remaining[0]);
+    return { order: [...top, ...bottom], applied: Array.from(applied) };
+  }
+
+  // Cross-division tiebreaker: use division records first
+  const applied = new Set<string>();
+  const teamDivRecords = new Map<string, { wins: number; losses: number }>();
+
+  teams.forEach((team) => {
+    const isEast = eastDivision.includes(team);
+    const divTeams = isEast ? eastDivision : westDivision;
+
     let wins = 0;
     let losses = 0;
+
     games.forEach((g) => {
-      if (!g.played) return;
-      if (tiedTeams.includes(g.winner!) && tiedTeams.includes(g.loser!)) {
-        if (g.winner === t) wins++;
-        if (g.loser === t) losses++;
+      if (g.played) {
+        if (g.winner === team && divTeams.includes(g.loser)) {
+          wins++;
+        } else if (g.loser === team && divTeams.includes(g.winner)) {
+          losses++;
+        }
       }
     });
-    const total = wins + losses;
-    const pct = total === 0 ? null : wins / total;
-    percents.set(t, pct);
+
+    teamDivRecords.set(team, { wins, losses });
   });
-  // Now split based on percentages, higher first, ties with same percent remain
-  const percentBuckets: Map<string | null, string[]> = new Map();
-  percents.forEach((pct, team) => {
-    const key = pct === null ? "null" : pct.toString();
-    const bucket = percentBuckets.get(key) || [];
-    bucket.push(team);
-    percentBuckets.set(key, bucket);
+
+  // Sort by division record
+  const sorted = teams.slice().sort((a, b) => {
+    const aRec = teamDivRecords.get(a)!;
+    const bRec = teamDivRecords.get(b)!;
+    const aPct = aRec.wins / Math.max(1, aRec.wins + aRec.losses);
+    const bPct = bRec.wins / Math.max(1, bRec.wins + bRec.losses);
+    return bPct - aPct;
   });
-  // sort keys descending (null last)
-  const keys = Array.from(percentBuckets.keys()).sort((a, b) => {
-    if (a === "null") return 1;
-    if (b === "null") return -1;
-    return parseFloat(String(b)) - parseFloat(String(a));
-  });
-  const ranking: string[] = [];
-  const remaining: string[][] = [];
-  keys.forEach((k) => {
-    const bucket = percentBuckets.get(k)!;
-    if (bucket.length === 1) ranking.push(bucket[0]);
-    else remaining.push(bucket.slice());
-  });
-  return { ranking, remainingTies: remaining };
+
+  applied.add("Division");
+  return { order: sorted, applied: Array.from(applied) };
 }
 
-// For now, rules B-D will be implemented in a simple manner; E-G are placeholders
-export function applyTieBreakers(
-  tiedTeams: string[],
-  allTeamsOrdered: TeamRecord[],
-  games: Game[]
-): { order: string[]; applied: string[] } {
-  if (tiedTeams.length <= 1) return { order: tiedTeams, applied: [] };
-  const appliedSet = new Set<string>();
-  if (tiedTeams.length > 1) appliedSet.add("A");
-  // 1: Rule A
-  const { ranking: ruleARanking, remainingTies } = applyRuleA(tiedTeams, games);
-  if (remainingTies.length === 0)
-    return { order: ruleARanking, applied: ["A"] };
-  // For each remaining tie group, try Rule B
-  const finalRanking: string[] = [];
-  finalRanking.push(...ruleARanking);
-  for (const group of remainingTies) {
-    // Rule B: win percentage vs common conference opponents among the tied teams
-    const commonOpponents = new Set<string>();
-    // find intersection of opponents for the group. For simplicity, find opponents that appeared in schedule for all group
-    // Build per-team opponent sets
-    const perOppSets: Map<string, Set<string>> = new Map();
-    group.forEach((t) => {
-      const opps = new Set<string>();
-      games.forEach((g) => {
-        if (!g.played) return;
-        if (g.winner === t) opps.add(g.loser!);
-        if (g.loser === t) opps.add(g.winner!);
-      });
-      perOppSets.set(t, opps);
-    });
-    // intersection
-    if (group.length > 0) {
-      const it = perOppSets.get(group[0]) || new Set();
-      it.forEach((o) => {
-        let isCommon = true;
-        perOppSets.forEach((s) => {
-          if (!s.has(o)) isCommon = false;
-        });
-        if (isCommon) commonOpponents.add(o);
-      });
+// SEC Tiebreaker Rules
+function tiebreakers_sec(teams: string[], games: Game[]) {
+  const applied = new Set<string>();
+  const top: string[] = [];
+  const bottom: string[] = [];
+  let remaining = teams.slice();
+
+  while (remaining.length > 1) {
+    let progressMade = false;
+
+    // Rule A: Head-to-head (two teams) or round robin (3+)
+    if (remaining.length === 2) {
+      const winner = headToHead(remaining, games);
+      if (winner) {
+        applied.add("A");
+        top.push(winner);
+        remaining = remaining.filter((t) => t !== winner);
+        progressMade = true;
+        continue;
+      }
+    } else {
+      const rr = roundRobin_threeScenarios(remaining, games);
+      if (rr) {
+        applied.add("A");
+        if (rr.winner) {
+          top.push(rr.team);
+        } else {
+          bottom.push(rr.team);
+        }
+        remaining = remaining.filter((t) => t !== rr.team);
+        progressMade = true;
+        continue;
+      }
     }
-    // compute win pct vs common opponents
-    const bucketScores: Map<number | string, string[]> = new Map();
-    group.forEach((t) => {
-      const pct = winPctAgainst(t, commonOpponents, games);
-      const k = pct === null ? "null" : pct.toString();
-      const arr = bucketScores.get(k) || [];
-      arr.push(t);
-      bucketScores.set(k, arr);
-    });
-    const keys = Array.from(bucketScores.keys()).sort((a, b) => {
-      if (a === "null") return 1;
-      if (b === "null") return -1;
-      return parseFloat(String(b)) - parseFloat(String(a));
-    });
-    keys.forEach((k) => {
-      const arr = bucketScores.get(k)!;
-      if (arr.length === 1) {
-        finalRanking.push(arr[0]);
-        if (k !== "null") appliedSet.add("B");
+
+    // Rule B: Win % against common opponents
+    const wc = winPctCommonOpponents(remaining, games);
+    if (wc) {
+      applied.add("B");
+      if (wc.winner) top.push(wc.team);
+      else bottom.push(wc.team);
+      remaining = remaining.filter((t) => t !== wc.team);
+      progressMade = true;
+      continue;
+    }
+
+    // Rule C: Win % vs next highest placed common opponent(s)
+    const wo = winOrderOfFinish(remaining, games);
+    if (wo) {
+      applied.add("C");
+      if (wo.winner) top.push(wo.team);
+      else bottom.push(wo.team);
+      remaining = remaining.filter((t) => t !== wo.team);
+      progressMade = true;
+      continue;
+    }
+
+    // Rule D: Combined opponent win pct
+    const co = combinedOpponentWinPct(remaining, games);
+    if (co) {
+      applied.add("D");
+      if (co.winner) top.push(co.team);
+      else bottom.push(co.team);
+      remaining = remaining.filter((t) => t !== co.team);
+      progressMade = true;
+      continue;
+    }
+
+    // No rule applied - use random ordering and break
+    if (!progressMade) {
+      applied.add("G");
+      for (let i = remaining.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [remaining[i], remaining[j]] = [remaining[j], remaining[i]];
+      }
+      top.push(...remaining);
+      remaining = [];
+      break;
+    }
+  }
+
+  if (remaining.length === 1) top.push(remaining[0]);
+  return { order: [...top, ...bottom], applied: Array.from(applied) };
+}
+
+function tiebreakers_generic(teams: string[], games: Game[]) {
+  const applied = new Set<string>();
+  const top: string[] = [];
+  const bottom: string[] = [];
+  let remaining = teams.slice();
+
+  while (remaining.length > 1) {
+    let progressMade = false;
+
+    // Attempt head-to-head if 2 teams
+    if (remaining.length === 2) {
+      const winner = headToHead(remaining, games);
+      if (winner) {
+        applied.add("A");
+        top.push(winner);
+        remaining = remaining.filter((t) => t !== winner);
+        progressMade = true;
+        continue;
+      }
+    }
+
+    // Attempt common opponents
+    const common = winPctCommonOpponents(remaining, games);
+    if (common) {
+      applied.add("B");
+      if (common.winner) {
+        top.push(common.team);
       } else {
-        // Rule C: iterate through standings (allTeamsOrdered) starting from top
-        appliedSet.add("C");
-        const broken = breakTiesByRuleC(arr, allTeamsOrdered, games);
-        // If Rule C fell through to Rule D, breakTiesByRuleC will call breakTiesByRuleD; we can detect by comparing results
-        const dBroken = breakTiesByRuleD(arr, games);
-        if (JSON.stringify(broken) === JSON.stringify(dBroken))
-          appliedSet.add("D");
-        finalRanking.push(...broken);
+        bottom.push(common.team);
       }
-    });
-  }
-  // If still ties in finalRanking (some groups unresolved), apply Rule E (total wins) and fallback alphabetical
-  // Final resolution will be sorted by total wins (Rule E) then alphabetically
-  // helper -> total wins in all games
-  function totalWins(team: string) {
-    let wins = 0;
-    games.forEach((g) => {
-      if (!g.played) return;
-      if (g.winner === team) wins++;
-    });
-    return wins;
+      remaining = remaining.filter((t) => t !== common.team);
+      progressMade = true;
+      continue;
+    }
+
+    // Attempt order of finish
+    const order = winOrderOfFinish(remaining, games);
+    if (order) {
+      applied.add("C");
+      if (order.winner) top.push(order.team);
+      else bottom.push(order.team);
+      remaining = remaining.filter((t) => t !== order.team);
+      progressMade = true;
+      continue;
+    }
+
+    // Attempt combined opponent pct
+    const co = combinedOpponentWinPct(remaining, games);
+    if (co) {
+      applied.add("D");
+      if (co.winner) top.push(co.team);
+      else bottom.push(co.team);
+      remaining = remaining.filter((t) => t !== co.team);
+      progressMade = true;
+      continue;
+    }
+
+    // No rule applied - use random ordering and break
+    if (!progressMade) {
+      applied.add("G");
+      for (let i = remaining.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [remaining[i], remaining[j]] = [remaining[j], remaining[i]];
+      }
+      top.push(...remaining);
+      remaining = [];
+      break;
+    }
   }
 
-  // We'll simply sort the entire list by totalWins then alphabetically as final resolve
-  const sorted = finalRanking.sort((a, b) => {
-    const aw = totalWins(a);
-    const bw = totalWins(b);
-    if (aw !== bw) return bw - aw;
-    // Rule F: compare SportSource rating if available
-    const ar = ratings[a] ?? null;
-    const br = ratings[b] ?? null;
-    if (ar !== null && br !== null && ar !== br) {
-      appliedSet.add("F");
-      return br - ar;
-    }
-    // If all prior comparisons equal but alphabetical differs, record Rule G (coin toss fallback)
-    const alpha = a.localeCompare(b);
-    if (alpha !== 0) {
-      appliedSet.add("G");
-    }
-    return alpha;
-  });
-  // Rule E (total wins) applied as final fallback
-  appliedSet.add("E");
-  const applied = Array.from(appliedSet);
-  return { order: sorted, applied };
+  if (remaining.length === 1) top.push(remaining[0]);
+  return { order: [...top, ...bottom], applied: Array.from(applied) };
 }
 
-function breakTiesByRuleC(
-  group: string[],
-  allTeamsOrdered: TeamRecord[],
+export function applyTieBreakers(
+  confName: string,
+  teams: string[],
   games: Game[]
 ) {
-  // Rule C: For each next highest placed common opponent in standings, compare win% vs them
-  const order = allTeamsOrdered.map((r) => r.team);
-  // to detect groups in ordering, we'll build a map from team -> confWins
-  const confWinsMap: Map<string, number> = new Map();
-  allTeamsOrdered.forEach((r) => confWinsMap.set(r.team, r.confWins));
-  // exclude tied group from ordering
-  const filteredOrder = order.filter((t) => !group.includes(t));
-  for (const opp of filteredOrder) {
-    // For the opp position: compute win pct vs opp (or vs group if opp is part of a tied group)
-    // Detect group membership by scanning filteredOrder around the opp for same confWins
-    const oppConf = confWinsMap.get(opp);
-    const tiedGroupOpps = [opp];
-    if (oppConf !== undefined) {
-      // include consecutive teams with same confWins
-      const idx = filteredOrder.indexOf(opp);
-      // look forward
-      for (let j = idx + 1; j < filteredOrder.length; j++) {
-        const t = filteredOrder[j];
-        if (confWinsMap.get(t) === oppConf) tiedGroupOpps.push(t);
-        else break;
-      }
-      // look backward
-      for (let j = idx - 1; j >= 0; j--) {
-        const t = filteredOrder[j];
-        if (confWinsMap.get(t) === oppConf) tiedGroupOpps.push(t);
-        else break;
-      }
-    }
-    const pctMap: Map<string, number | null> = new Map();
-    group.forEach((t) => {
-      const pct = winPctAgainst(t, new Set(tiedGroupOpps), games);
-      pctMap.set(t, pct);
-    });
-    // see if pct values differ among group
-    const scores = Array.from(pctMap.values()).map((v) =>
-      v === null ? -1 : v
-    );
-    const max = Math.max(...scores);
-    const min = Math.min(...scores);
-    if (max !== min) {
-      // sort group by descending pct
-      return group.sort((a, b) => {
-        const aVal = pctMap.get(a) === null ? -1 : (pctMap.get(a) as number);
-        const bVal = pctMap.get(b) === null ? -1 : (pctMap.get(b) as number);
-        if (aVal !== bVal) return bVal - aVal;
-        return a.localeCompare(b);
-      });
-    }
+  switch (confName.toLowerCase()) {
+    case "aac":
+      return tiebreakers_aac(teams, games);
+    case "acc":
+      return tiebreakers_acc(teams, games);
+    case "big10":
+      return tiebreakers_big10(teams, games);
+    case "big12":
+      return tiebreakers_big12(teams, games);
+    case "mw":
+      return tiebreakers_mw(teams, games);
+    case "sbc":
+      return tiebreakers_sbc(teams, games);
+    case "sec":
+      return tiebreakers_sec(teams, games);
+    default:
+      return tiebreakers_generic(teams, games);
   }
-  // if still tied through all opponents, proceed to Rule D
-  return breakTiesByRuleD(group, games);
-}
-
-function breakTiesByRuleD(group: string[], games: Game[]) {
-  // Rule D: Combined win percentage in conference games of conference opponents
-  // For each team, gather its conference opponents, compute their conference record win percentage
-  const sosMap: Map<string, number> = new Map();
-  group.forEach((t) => {
-    const opps = new Set<string>();
-    games.forEach((g) => {
-      if (!g.played) return;
-      if (g.winner === t) opps.add(g.loser!);
-      if (g.loser === t) opps.add(g.winner!);
-    });
-    let oppWins = 0;
-    let oppGames = 0;
-    opps.forEach((opp) => {
-      games.forEach((g) => {
-        if (!g.played) return;
-        // count only conference-game wins/losses (we're already in conf)
-        if (g.winner === opp) oppWins++;
-        if (g.loser === opp) oppGames++;
-        if (g.winner === opp || g.loser === opp) oppGames++;
-      });
-    });
-    const pct = oppGames === 0 ? 0 : oppWins / oppGames;
-    sosMap.set(t, pct);
-  });
-  // sort descending
-  const sorted = group.sort((a, b) => {
-    const aVal = sosMap.get(a) ?? 0;
-    const bVal = sosMap.get(b) ?? 0;
-    if (aVal !== bVal) return bVal - aVal;
-    return a.localeCompare(b);
-  });
-  return sorted;
 }

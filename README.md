@@ -1,73 +1,97 @@
-# React + TypeScript + Vite
+# Tie Breaker Scenarios
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+AAC: https://theamerican.org/documents/2024/10/21/2024_FB_Tiebreakers.pdf
 
-Currently, two official plugins are available:
+ACC: https://theacc.com/documents/2023/5/17/ACC_FOOTBALL_TIEBREAKER_POLICY.pdf
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Big 10: https://bigten.org/fb/article/blt6104802d94ebe1ab/
 
-## React Compiler
+Big 12: https://big12sports.com/documents/2024/9/5/Big_12_Football_2024_Tiebreaker_Policy.pdf
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+MW: https://storage.googleapis.com/themw-com/2025/10/c71edc0a-2025-mw-football-championship-tiebreakers-final.pdf
 
-## Expanding the ESLint configuration
+SBC: https://sunbeltsports.org/sports/2018/8/30/FB_Tie-Breakers.aspx
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+SEC: https://www.secsports.com/fbtiebreaker
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## Written Out, I am excluding rules that involve rankings, metrics, and non-conference stats
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+### AAC
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+If two team tie
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+- Head to Head (H2H) Result
+- Win percentage against all common conference opponents
+- Coin Toss
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+If more than two teams tie.
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+- Mini Round-Robin (records against all other tied teams), if any of the teams did not play each other, the teams remail tied UNLESS one team defeated all other tied teams.
+  - Example: OSU, Michigan, Indiana are tied. Michigan and Indiana did not play each other, but OSU beat both Michigan and Indiana. Ohio State is on top, Michigan and Indiana proceed to use two team tiebreaker
+- Win Percentage against all common conference opponents
+  - This includes if two of the teams played each other, which only happens if more than two teams are at this point of the tiebreaker
+- Coin Toss
+
+### ACC -- SEC
+
+If two team tie
+
+- Head to Head (H2H) Result
+- Win percentage against all common conference opponents
+- win percentage against common opponents based upon their order of finish (overall conference win percentage, with ties broken) and proceeding through other common opponents based upon their order of finish.
+- Combined win percentage of conference opponents
+- Coin Toss
+
+If more than two teams tie
+
+- Mini Round-Robin (records against all other tied teams), if any of the teams did not play each other, the teams remail tied UNLESS one team defeated all other tied teams, then that team is at the top OR UNLESS one team lost to all other tied teams, then that team is at the bottom.
+- Win percentage against all common conference opponents
+- win percentage against common opponents based upon their order of finish (overall conference win percentage, with ties broken) and proceeding through other common opponents based upon their order of finish.
+- Combined win percentage of conference opponents
+- Coin Toss
+
+### Big 10 -- Big 12
+
+If two team tie
+
+- Head to Head (H2H) Result
+- Win percentage against all common conference opponents
+- win percentage against common opponents based upon their order of finish (overall conference win percentage, with ties broken) and proceeding through other common opponents based upon their order of finish.
+- Combined win percentage of conference opponents
+- Coin Toss
+
+If more than two teams tie
+
+- Mini Round-Robin (records against all other tied teams), if any of the teams did not play each other, the teams remail tied UNLESS one team defeated all other tied teams, then that team is at the top.
+- Win percentage against all common conference opponents
+- win percentage against common opponents based upon their order of finish (overall conference win percentage, with ties broken) and proceeding through other common opponents based upon their order of finish.
+- Combined win percentage of conference opponents
+- Coin Toss
+
+### MW
+
+If two team tie
+
+- Head to Head (H2H) Result
+- win percentage against common opponents based upon their order of finish (overall conference win percentage, with ties broken) and proceeding through other common opponents based upon their order of finish.
+- Win percentage against all common conference opponents
+- Coin Toss
+
+If more than two teams tie.
+
+- Mini Round-Robin (records against all other tied teams), if any of the teams did not play each other, the teams remail tied UNLESS one team defeated all other tied teams.
+- win percentage against common opponents based upon their order of finish (overall conference win percentage, with ties broken) and proceeding through other common opponents based upon their order of finish.
+- Win percentage against all common conference opponents
+- Coin Toss
+
+### SBC
+
+East and West Division Champions play in Championship game. Since all division teams play each other
+
+If two team tie (for division)
+
+- Head to Head (H2H) Result
+
+If more than two teams tied (for division)
+
+- Mini Round-Robin (records against all other tied teams)

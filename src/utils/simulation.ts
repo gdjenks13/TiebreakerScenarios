@@ -15,9 +15,19 @@ export function simulateConference(conf: ConferenceData): Scenario[] {
     const topTwo = finalStandings.slice(0, 2).map((r) => r.team);
     return [{ gameResults: [], finalStandings, topTwo }];
   }
-  const limit = Math.min(n, MAX_SIMULATION);
+
+  // Enforce MAX_SIMULATION limit
+  if (n > MAX_SIMULATION) {
+    console.warn(
+      `Too many unplayed games (${n} > ${MAX_SIMULATION}). Simulation skipped.`
+    );
+    return [];
+  }
+
+  const limit = n; // Use all games since we've checked the limit
   const scenarios: Scenario[] = [];
   const total = 1 << limit;
+
   for (let mask = 0; mask < total; mask++) {
     const gameResults: boolean[] = [];
     // clone games
@@ -59,10 +69,13 @@ export function simulateConference(conf: ConferenceData): Scenario[] {
         i++;
       }
       if (tiedGroup.length > 1) {
+        const gamesForGroup = newConf.games.filter(
+          (g) => tiedGroup.includes(g.winner) || tiedGroup.includes(g.loser)
+        );
         const resolvedResult = applyTieBreakers(
+          newConf.name,
           tiedGroup,
-          finalStandings,
-          newConf.games
+          gamesForGroup
         );
         appliedRules.push(...resolvedResult.applied);
         resolvedResult.order.forEach((t) => {

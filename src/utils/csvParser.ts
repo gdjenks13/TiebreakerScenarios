@@ -5,21 +5,37 @@ export function parseConferenceCsv(name: string, raw: string): ConferenceData {
     .split(/\r?\n/)
     .map((l) => l.trim())
     .filter(Boolean);
+
+  if (lines.length === 0) {
+    return { name, teams: [], games: [] };
+  }
+
   // Expect header: Winner,WPts,Loser,LPts
   const dataLines = lines.slice(1);
   const games: Game[] = [];
+
   for (let i = 0; i < dataLines.length; i++) {
     const row = dataLines[i];
     // parse CSV row with 4 columns
     const parts = row.split(",");
-    if (parts.length < 4) continue;
+    if (parts.length < 4) {
+      console.warn(`Skipping malformed CSV row ${i + 2} in ${name}: ${row}`);
+      continue;
+    }
     const [winnerRaw, wPtsRaw, loserRaw, lPtsRaw] = parts;
     const winner = winnerRaw.trim();
     const loser = loserRaw.trim();
+
+    if (!winner || !loser) {
+      console.warn(`Skipping row ${i + 2} in ${name} with empty team name`);
+      continue;
+    }
+
     const wPts = wPtsRaw.trim() === "" ? null : Number(wPtsRaw.trim());
     const lPts = lPtsRaw.trim() === "" ? null : Number(lPtsRaw.trim());
     const played = wPts !== null && lPts !== null;
-    const id = `${name}-${i}-${winner ?? "TBD"}-${loser ?? "TBD"}`;
+    const id = `${name}-${i}-${winner}-${loser}`;
+
     const game: Game = {
       id,
       winner: winner,

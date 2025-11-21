@@ -6,12 +6,14 @@ import { conferenceRawMap } from "../utils/dataLoader";
 import { computeStandings } from "../utils/standings";
 import { getUnplayedGames } from "../utils/simulation";
 import { simulateConference } from "../utils/simulation";
+import { getTop2Insights } from "../utils/minimalScenarios";
 import { MAX_SIMULATION } from "@/utils/constants";
 
 type Props = { confKey: string };
 
 export const ConferencePage: React.FC<Props> = ({ confKey }) => {
   const [scenarios, setScenarios] = useState<ScenarioType[] | null>(null);
+  const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
 
   const conference = useMemo(() => {
     const raw = (conferenceRawMap as Record<string, string>)[confKey];
@@ -28,6 +30,11 @@ export const ConferencePage: React.FC<Props> = ({ confKey }) => {
     if (!conference) return [];
     return getUnplayedGames(conference);
   }, [conference]);
+
+  const top2Insights = useMemo(() => {
+    if (!conference || !selectedTeam) return null;
+    return getTop2Insights(conference, selectedTeam);
+  }, [conference, selectedTeam]);
 
   const simulate = async () => {
     if (!conference) return;
@@ -47,6 +54,7 @@ export const ConferencePage: React.FC<Props> = ({ confKey }) => {
                 <th className="px-2 py-1 text-left font-semibold">Team</th>
                 <th className="px-2 py-1 text-center font-semibold">Wins</th>
                 <th className="px-2 py-1 text-center font-semibold">Losses</th>
+                <th className="px-2 py-1 text-center font-semibold">Top 2?</th>
               </tr>
             </thead>
 
@@ -62,6 +70,18 @@ export const ConferencePage: React.FC<Props> = ({ confKey }) => {
                   </td>
                   <td className="px-2 py-1 text-center font-semibold">
                     {row.confLosses}
+                  </td>
+                  <td className="px-2 py-1 text-center">
+                    <button
+                      onClick={() => setSelectedTeam(row.team)}
+                      className={`px-2 py-0.5 text-xs rounded ${
+                        selectedTeam === row.team
+                          ? "bg-green-600 text-white"
+                          : "bg-gray-300 hover:bg-gray-400"
+                      }`}
+                    >
+                      Analyze
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -96,17 +116,102 @@ export const ConferencePage: React.FC<Props> = ({ confKey }) => {
         </div>
       </div>
 
+      {selectedTeam && top2Insights && unplayed.length > 0 && (
+        <div className="mt-6 p-4 bg-blue-50 rounded-lg border-2 border-blue-300">
+          <h3 className="text-xl font-semibold text-blue-800">
+            Top 2 Analysis: {selectedTeam}
+          </h3>
+          {top2Insights.canFinishTop2 ? (
+            <div className="mt-3">
+              <p className="text-green-700 font-medium">
+                ✓ {selectedTeam} can finish in the top 2!
+              </p>
+              <p className="text-sm text-gray-600 mt-1">
+                Overall probability:{" "}
+                {(top2Insights.probability * 100).toFixed(2)}%
+              </p>
+
+              {top2Insights.mustWinGames.length > 0 && (
+                <div className="mt-4">
+                  <h4 className="font-semibold text-red-700">
+                    Must Win (Required):
+                  </h4>
+                  <ul className="mt-2 space-y-1">
+                    {top2Insights.mustWinGames.map((game) => (
+                      <li
+                        key={game.id}
+                        className="text-sm bg-red-100 px-3 py-1 rounded"
+                      >
+                        {selectedTeam} must beat{" "}
+                        {game.winner === selectedTeam
+                          ? game.loser
+                          : game.winner}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {top2Insights.helpfulWins.length > 0 && (
+                <div className="mt-4">
+                  <h4 className="font-semibold text-yellow-700">
+                    Helpful Wins (High Impact):
+                  </h4>
+                  <ul className="mt-2 space-y-1">
+                    {top2Insights.helpfulWins
+                      .slice(0, 5)
+                      .map(({ game, impact }) => (
+                        <li
+                          key={game.id}
+                          className="text-sm bg-yellow-100 px-3 py-1 rounded flex justify-between"
+                        >
+                          <span>
+                            {selectedTeam} beating{" "}
+                            {game.winner === selectedTeam
+                              ? game.loser
+                              : game.winner}
+                          </span>
+                          <span className="font-semibold">
+                            {(impact * 100).toFixed(0)}%
+                          </span>
+                        </li>
+                      ))}
+                  </ul>
+                </div>
+              )}
+
+              {top2Insights.mustWinGames.length === 0 &&
+                top2Insights.helpfulWins.length === 0 && (
+                  <p className="mt-3 text-sm text-gray-700">
+                    No specific games are critical. {selectedTeam} has multiple
+                    paths to the top 2.
+                  </p>
+                )}
+            </div>
+          ) : (
+            <p className="mt-3 text-red-700 font-medium">
+              ✗ {selectedTeam} cannot finish in the top 2 with remaining games.
+            </p>
+          )}
+        </div>
+      )}
+
       <div className="mt-4">
         <button
           onClick={simulate}
-          className="px-3 py-1 bg-blue-500 text-white rounded-md"
+          disabled={unplayed.length > MAX_SIMULATION}
+          className={`px-3 py-1 rounded-md ${
+            unplayed.length > MAX_SIMULATION
+              ? "bg-gray-400 text-gray-700 cursor-not-allowed"
+              : "bg-blue-500 text-white hover:bg-blue-600"
+          }`}
         >
           Simulate Scenarios
         </button>
         {unplayed.length > MAX_SIMULATION && (
-          <div className="mt-2 text-sm text-yellow-600">
-            Warning: more than ${MAX_SIMULATION} unplayed games detected; Will
-            not calculate until then.
+          <div className="mt-2 text-sm text-red-600 font-medium">
+            Warning: Too many unplayed games ({unplayed.length} &gt;{" "}
+            {MAX_SIMULATION}). Simulation disabled to prevent browser freeze.
           </div>
         )}
       </div>

@@ -7,12 +7,15 @@ export type Game = {
   played: boolean;
 };
 
+export type TieBreakerResult = {
+  team: string;
+  winner: boolean;
+};
+
 export type TeamRecord = {
   team: string;
   confWins: number;
   confLosses: number;
-  gamesPlayed: number;
-  conferenceGamesPlayed: number;
 };
 
 export type ConferenceData = {
