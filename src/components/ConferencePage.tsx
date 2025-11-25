@@ -31,6 +31,9 @@ interface Props {
 
 export function ConferencePage({ confKey, theme }: Props) {
   const [viewMode, setViewMode] = useState<ViewMode>("scenarios");
+  const [expandedScenarios, setExpandedScenarios] = useState<Set<string>>(
+    new Set()
+  );
   const scenarioData = getScenarioData(confKey);
 
   const conference = useMemo(() => {
@@ -432,134 +435,188 @@ export function ConferencePage({ confKey, theme }: Props) {
                                   {pct}%
                                 </span>
                               </td>
-                              <td className="px-4 py-4">
+                              <td className="px-2 sm:px-4 py-4">
                                 {requirements && requirements.top2Count > 0 && (
                                   <div className="space-y-2">
-                                    {requirements.sufficientConditions.length >
-                                    0 ? (
-                                      <div className="space-y-1">
+                                    {/* Mobile: Show/Hide Button */}
+                                    <button
+                                      onClick={() => {
+                                        const newExpanded = new Set(
+                                          expandedScenarios
+                                        );
+                                        if (newExpanded.has(s.team)) {
+                                          newExpanded.delete(s.team);
+                                        } else {
+                                          newExpanded.add(s.team);
+                                        }
+                                        setExpandedScenarios(newExpanded);
+                                      }}
+                                      className="lg:hidden w-full px-3 py-2 text-xs font-semibold rounded transition-colors"
+                                      style={{
+                                        backgroundColor: theme.bg.secondary,
+                                        color: theme.text.primary,
+                                        border: `1px solid ${theme.border}`,
+                                      }}
+                                    >
+                                      {expandedScenarios.has(s.team)
+                                        ? "▼ Hide"
+                                        : "▶ View"}{" "}
+                                      Scenarios
+                                    </button>
+
+                                    {/* Desktop: Always show, Mobile: Show when expanded */}
+                                    <div
+                                      className={
+                                        expandedScenarios.has(s.team)
+                                          ? "block"
+                                          : "hidden lg:block"
+                                      }
+                                    >
+                                      {requirements.sufficientConditions
+                                        .length > 0 ? (
+                                        <div className="space-y-1">
+                                          <p
+                                            className="text-xs font-bold uppercase tracking-wide mb-2"
+                                            style={{ color: theme.text.muted }}
+                                          >
+                                            Guaranteed if:
+                                          </p>
+                                          <div className="max-h-48 overflow-y-auto space-y-1">
+                                            {requirements.sufficientConditions.map(
+                                              (condition, idx) => (
+                                                <div
+                                                  key={idx}
+                                                  className="text-xs px-3 py-2 rounded"
+                                                  style={{
+                                                    backgroundColor:
+                                                      theme.isDark
+                                                        ? "#0b2e1a" /* dark green */
+                                                        : "#e6f4ea" /* light green */,
+                                                    border: `1px solid ${
+                                                      theme.isDark
+                                                        ? "#14532d"
+                                                        : "#b7e4c7"
+                                                    }`,
+                                                  }}
+                                                >
+                                                  <div
+                                                    style={{
+                                                      color: theme.text.primary,
+                                                    }}
+                                                  >
+                                                    {condition.outcomes.map(
+                                                      (outcome, oIdx) => (
+                                                        <span key={oIdx}>
+                                                          {oIdx > 0 && (
+                                                            <span
+                                                              style={{
+                                                                color:
+                                                                  theme.text
+                                                                    .muted,
+                                                              }}
+                                                            >
+                                                              {" "}
+                                                              AND{" "}
+                                                            </span>
+                                                          )}
+                                                          <span className="font-semibold">
+                                                            {outcome.winner}
+                                                          </span>{" "}
+                                                          <span
+                                                            style={{
+                                                              color:
+                                                                theme.text
+                                                                  .muted,
+                                                            }}
+                                                          >
+                                                            beats
+                                                          </span>{" "}
+                                                          <span className="font-semibold">
+                                                            {outcome.loser}
+                                                          </span>
+                                                        </span>
+                                                      )
+                                                    )}
+                                                  </div>
+                                                  <div
+                                                    className="mt-1 text-[10px]"
+                                                    style={{
+                                                      color: theme.text.muted,
+                                                    }}
+                                                  >
+                                                    {
+                                                      condition.guaranteedScenarios
+                                                    }
+                                                    /
+                                                    {
+                                                      requirements.totalScenarios
+                                                    }{" "}
+                                                    scenarios
+                                                  </div>
+                                                </div>
+                                              )
+                                            )}
+                                          </div>
+                                        </div>
+                                      ) : (
                                         <p
-                                          className="text-xs font-bold uppercase tracking-wide mb-2"
+                                          className="text-xs"
                                           style={{ color: theme.text.muted }}
                                         >
-                                          Guaranteed if:
+                                          No guaranteed paths available
                                         </p>
-                                        <div className="max-h-48 overflow-y-auto space-y-1">
-                                          {requirements.sufficientConditions.map(
-                                            (condition, idx) => (
-                                              <div
-                                                key={idx}
-                                                className="text-xs px-3 py-2 rounded"
-                                                style={{
-                                                  backgroundColor: theme.isDark
-                                                    ? "#0b2e1a" /* dark green */
-                                                    : "#e6f4ea" /* light green */,
-                                                  border: `1px solid ${
-                                                    theme.isDark
-                                                      ? "#14532d"
-                                                      : "#b7e4c7"
-                                                  }`,
-                                                }}
-                                              >
-                                                <div
-                                                  style={{
-                                                    color: theme.text.primary,
-                                                  }}
-                                                >
-                                                  {condition.outcomes.map(
-                                                    (outcome, oIdx) => (
-                                                      <span key={oIdx}>
-                                                        {oIdx > 0 && (
-                                                          <span
-                                                            style={{
-                                                              color:
-                                                                theme.text
-                                                                  .muted,
-                                                            }}
-                                                          >
-                                                            {" "}
-                                                            AND{" "}
-                                                          </span>
-                                                        )}
-                                                        <span className="font-semibold">
-                                                          {outcome.winner}
-                                                        </span>{" "}
-                                                        <span
-                                                          style={{
-                                                            color:
-                                                              theme.text.muted,
-                                                          }}
-                                                        >
-                                                          beats
-                                                        </span>{" "}
-                                                        <span className="font-semibold">
-                                                          {outcome.loser}
-                                                        </span>
-                                                      </span>
-                                                    )
-                                                  )}
-                                                </div>
-                                                <div
-                                                  className="mt-1 text-[10px]"
-                                                  style={{
-                                                    color: theme.text.muted,
-                                                  }}
-                                                >
-                                                  {
-                                                    condition.guaranteedScenarios
-                                                  }
-                                                  /{requirements.totalScenarios}{" "}
-                                                  scenarios
-                                                </div>
-                                              </div>
-                                            )
-                                          )}
-                                        </div>
-                                      </div>
-                                    ) : (
-                                      <p
-                                        className="text-xs"
-                                        style={{ color: theme.text.muted }}
-                                      >
-                                        No guaranteed paths available
-                                      </p>
-                                    )}
+                                      )}
 
-                                    {requirements.blockingConditions.length >
-                                      0 && (
-                                      <div className="space-y-1 mt-3">
-                                        <p
-                                          className="text-xs font-bold uppercase tracking-wide mb-2"
-                                          style={{ color: theme.accent }}
-                                        >
-                                          Eliminated if:
-                                        </p>
-                                        <div className="space-y-1">
-                                          {requirements.blockingConditions.map(
-                                            (condition, idx) => (
-                                              <div
-                                                key={idx}
-                                                className="text-xs px-3 py-2 rounded"
-                                                style={{
-                                                  backgroundColor: theme.isDark
-                                                    ? "#3a0e12" /* dark red */
-                                                    : "#fee2e2" /* light red */,
-                                                  border: `1px solid ${
-                                                    theme.isDark
-                                                      ? "#7f1d1d"
-                                                      : "#fecaca"
-                                                  }`,
-                                                }}
-                                              >
+                                      {requirements.blockingConditions.length >
+                                        0 && (
+                                        <div className="space-y-1 mt-3">
+                                          <p
+                                            className="text-xs font-bold uppercase tracking-wide mb-2"
+                                            style={{ color: theme.accent }}
+                                          >
+                                            Eliminated if:
+                                          </p>
+                                          <div className="max-h-48 overflow-y-auto space-y-1">
+                                            {requirements.blockingConditions.map(
+                                              (condition, idx) => (
                                                 <div
+                                                  key={idx}
+                                                  className="text-xs px-3 py-2 rounded"
                                                   style={{
-                                                    color: theme.text.primary,
+                                                    backgroundColor:
+                                                      theme.isDark
+                                                        ? "#3a0e12" /* dark red */
+                                                        : "#fee2e2" /* light red */,
+                                                    border: `1px solid ${
+                                                      theme.isDark
+                                                        ? "#7f1d1d"
+                                                        : "#fecaca"
+                                                    }`,
                                                   }}
                                                 >
-                                                  {condition.outcomes.map(
-                                                    (outcome, oIdx) => (
-                                                      <span key={oIdx}>
-                                                        {oIdx > 0 && (
+                                                  <div
+                                                    style={{
+                                                      color: theme.text.primary,
+                                                    }}
+                                                  >
+                                                    {condition.outcomes.map(
+                                                      (outcome, oIdx) => (
+                                                        <span key={oIdx}>
+                                                          {oIdx > 0 && (
+                                                            <span
+                                                              style={{
+                                                                color:
+                                                                  theme.text
+                                                                    .muted,
+                                                              }}
+                                                            >
+                                                              {" "}
+                                                              AND{" "}
+                                                            </span>
+                                                          )}
+                                                          <span className="font-semibold">
+                                                            {outcome.winner}
+                                                          </span>{" "}
                                                           <span
                                                             style={{
                                                               color:
@@ -567,34 +624,22 @@ export function ConferencePage({ confKey, theme }: Props) {
                                                                   .muted,
                                                             }}
                                                           >
-                                                            {" "}
-                                                            AND{" "}
+                                                            beats
+                                                          </span>{" "}
+                                                          <span className="font-semibold">
+                                                            {outcome.loser}
                                                           </span>
-                                                        )}
-                                                        <span className="font-semibold">
-                                                          {outcome.winner}
-                                                        </span>{" "}
-                                                        <span
-                                                          style={{
-                                                            color:
-                                                              theme.text.muted,
-                                                          }}
-                                                        >
-                                                          beats
-                                                        </span>{" "}
-                                                        <span className="font-semibold">
-                                                          {outcome.loser}
                                                         </span>
-                                                      </span>
-                                                    )
-                                                  )}
+                                                      )
+                                                    )}
+                                                  </div>
                                                 </div>
-                                              </div>
-                                            )
-                                          )}
+                                              )
+                                            )}
+                                          </div>
                                         </div>
-                                      </div>
-                                    )}
+                                      )}
+                                    </div>
                                   </div>
                                 )}
                               </td>
