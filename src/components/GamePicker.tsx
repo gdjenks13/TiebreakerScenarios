@@ -3,9 +3,18 @@ import type { Game, ConferenceData, TeamRecord } from "@types";
 import { computeStandings } from "@standings";
 import { applyTieBreakers } from "@tiebreakers";
 
+interface Theme {
+  isDark: boolean;
+  bg: { primary: string; secondary: string; tertiary: string; hover: string };
+  text: { primary: string; secondary: string; muted: string };
+  border: string;
+  accent: string;
+}
+
 interface Props {
   conference: ConferenceData;
   unplayedGames: Game[];
+  theme: Theme;
 }
 
 type StandingsWithTiebreaker = {
@@ -33,7 +42,7 @@ function getRuleDescription(code: string): string {
   return RULE_DESCRIPTIONS[code] || `Rule ${code}`;
 }
 
-export function GamePicker({ conference, unplayedGames }: Props) {
+export function GamePicker({ conference, unplayedGames, theme }: Props) {
   const [picks, setPicks] = useState<Map<string, string>>(new Map());
 
   const handlePick = (gameId: string, winner: string) => {
@@ -143,52 +152,124 @@ export function GamePicker({ conference, unplayedGames }: Props) {
 
   return (
     <div className="space-y-6">
-      <div className="flex gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Current Standings for Context */}
-        <div className="shrink-0">
-          <h3 className="text-lg font-semibold mb-3 text-gray-700">
+        <div>
+          <h3
+            className="text-lg font-bold mb-3 uppercase tracking-wide"
+            style={{ color: theme.text.primary }}
+          >
             Current Standings
           </h3>
-          <table className="table-auto border-collapse overflow-hidden rounded-md text-sm">
-            <thead className="bg-gray-600 text-white">
-              <tr>
-                <th className="px-2 py-1 text-left font-semibold">Team</th>
-                <th className="px-2 py-1 text-center font-semibold">W</th>
-                <th className="px-2 py-1 text-center font-semibold">L</th>
-              </tr>
-            </thead>
-            <tbody className="bg-gray-50">
-              {currentStandings.map((row: TeamRecord) => (
-                <tr
-                  key={row.team}
-                  className="even:bg-gray-100 hover:bg-blue-50 transition-colors"
-                >
-                  <td className="px-2 py-1 font-medium">{row.team}</td>
-                  <td className="px-2 py-1 text-center">{row.confWins}</td>
-                  <td className="px-2 py-1 text-center">{row.confLosses}</td>
+          <div
+            className="rounded overflow-hidden"
+            style={{
+              backgroundColor: theme.bg.secondary,
+              border: `1px solid ${theme.border}`,
+            }}
+          >
+            <table className="w-full">
+              <thead style={{ backgroundColor: theme.bg.tertiary }}>
+                <tr>
+                  <th
+                    className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider"
+                    style={{ color: theme.text.muted }}
+                  >
+                    Team
+                  </th>
+                  <th
+                    className="px-4 py-3 text-center text-xs font-bold uppercase tracking-wider"
+                    style={{ color: theme.text.muted }}
+                  >
+                    W
+                  </th>
+                  <th
+                    className="px-4 py-3 text-center text-xs font-bold uppercase tracking-wider"
+                    style={{ color: theme.text.muted }}
+                  >
+                    L
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody style={{ borderTop: `1px solid ${theme.border}` }}>
+                {currentStandings.map((row: TeamRecord, idx: number) => (
+                  <tr
+                    key={row.team}
+                    className="transition-colors"
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.backgroundColor = theme.bg.hover)
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.backgroundColor = "transparent")
+                    }
+                    style={{
+                      borderTop: idx > 0 ? `1px solid ${theme.border}` : "none",
+                    }}
+                  >
+                    <td
+                      className="px-4 py-3 font-semibold"
+                      style={{ color: theme.text.primary }}
+                    >
+                      <span
+                        className="mr-2 text-sm"
+                        style={{ color: theme.text.muted }}
+                      >
+                        {idx + 1}
+                      </span>
+                      {row.team}
+                    </td>
+                    <td
+                      className="px-4 py-3 text-center font-bold"
+                      style={{ color: theme.text.primary }}
+                    >
+                      {row.confWins}
+                    </td>
+                    <td
+                      className="px-4 py-3 text-center font-bold"
+                      style={{ color: theme.text.primary }}
+                    >
+                      {row.confLosses}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         {/* Game Picker Section */}
-        <div className="flex-1">
+        <div>
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-lg font-semibold text-gray-700">
+            <h3
+              className="text-lg font-bold uppercase tracking-wide"
+              style={{ color: theme.text.primary }}
+            >
               Pick Winners ({picks.size}/{unplayedGames.length})
             </h3>
             <div className="flex gap-2">
               <button
                 onClick={pickRandomly}
-                className="px-3 py-1 text-sm bg-blue-500 hover:bg-blue-600 text-white rounded-md transition-colors"
+                className="px-4 py-2 text-xs font-bold rounded transition-colors uppercase tracking-wide"
+                style={{ backgroundColor: theme.accent, color: "#ffffff" }}
+                onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.9")}
+                onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
               >
                 Pick Randomly
               </button>
               {picks.size > 0 && (
                 <button
                   onClick={clearPicks}
-                  className="px-3 py-1 text-sm bg-gray-200 hover:bg-gray-300 rounded-md transition-colors"
+                  className="px-4 py-2 text-xs font-bold rounded transition-colors uppercase tracking-wide"
+                  style={{
+                    backgroundColor: theme.bg.secondary,
+                    color: theme.text.primary,
+                  }}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.backgroundColor = theme.bg.hover)
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.backgroundColor = theme.bg.secondary)
+                  }
                 >
                   Clear All
                 </button>
@@ -196,7 +277,7 @@ export function GamePicker({ conference, unplayedGames }: Props) {
             </div>
           </div>
 
-          <div className="grid gap-2 max-w-xl">
+          <div className="space-y-2">
             {unplayedGames.map((game) => {
               const pick = picks.get(game.id);
               const homeTeam = game.loser; // In the CSV, loser column is home
@@ -205,33 +286,71 @@ export function GamePicker({ conference, unplayedGames }: Props) {
               return (
                 <div
                   key={game.id}
-                  className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg border border-gray-200"
+                  className="rounded overflow-hidden"
+                  style={{
+                    backgroundColor: theme.bg.secondary,
+                    border: `1px solid ${theme.border}`,
+                  }}
                 >
-                  {/* Home Team Button */}
-                  <button
-                    onClick={() => handlePick(game.id, homeTeam)}
-                    className={`flex-1 py-2 px-4 rounded-md font-medium transition-all ${
-                      pick === homeTeam
-                        ? "bg-green-500 text-white shadow-md"
-                        : "bg-white hover:bg-green-100 border border-gray-300"
-                    }`}
-                  >
-                    {homeTeam}
-                  </button>
+                  <div className="flex items-stretch">
+                    {/* Home Team Button */}
+                    <button
+                      onClick={() => handlePick(game.id, homeTeam)}
+                      className="flex-1 py-3 px-4 font-bold text-left transition-all"
+                      style={{
+                        backgroundColor:
+                          pick === homeTeam ? theme.accent : theme.bg.secondary,
+                        color:
+                          pick === homeTeam ? "#ffffff" : theme.text.primary,
+                      }}
+                      onMouseEnter={(e) => {
+                        if (pick !== homeTeam)
+                          e.currentTarget.style.backgroundColor =
+                            theme.bg.hover;
+                      }}
+                      onMouseLeave={(e) => {
+                        if (pick !== homeTeam)
+                          e.currentTarget.style.backgroundColor =
+                            theme.bg.secondary;
+                      }}
+                    >
+                      {homeTeam}
+                    </button>
 
-                  <span className="text-gray-400 font-medium text-sm">vs</span>
+                    <div
+                      className="flex items-center px-3 text-xs font-bold"
+                      style={{
+                        backgroundColor: theme.bg.tertiary,
+                        color: theme.text.muted,
+                      }}
+                    >
+                      VS
+                    </div>
 
-                  {/* Away Team Button */}
-                  <button
-                    onClick={() => handlePick(game.id, awayTeam)}
-                    className={`flex-1 py-2 px-4 rounded-md font-medium transition-all ${
-                      pick === awayTeam
-                        ? "bg-green-500 text-white shadow-md"
-                        : "bg-white hover:bg-green-100 border border-gray-300"
-                    }`}
-                  >
-                    {awayTeam}
-                  </button>
+                    {/* Away Team Button */}
+                    <button
+                      onClick={() => handlePick(game.id, awayTeam)}
+                      className="flex-1 py-3 px-4 font-bold text-right transition-all"
+                      style={{
+                        backgroundColor:
+                          pick === awayTeam ? theme.accent : theme.bg.secondary,
+                        color:
+                          pick === awayTeam ? "#ffffff" : theme.text.primary,
+                      }}
+                      onMouseEnter={(e) => {
+                        if (pick !== awayTeam)
+                          e.currentTarget.style.backgroundColor =
+                            theme.bg.hover;
+                      }}
+                      onMouseLeave={(e) => {
+                        if (pick !== awayTeam)
+                          e.currentTarget.style.backgroundColor =
+                            theme.bg.secondary;
+                      }}
+                    >
+                      {awayTeam}
+                    </button>
+                  </div>
                 </div>
               );
             })}
@@ -241,44 +360,101 @@ export function GamePicker({ conference, unplayedGames }: Props) {
 
       {/* Results Section */}
       {allPicked && result && (
-        <div className="border-t pt-6">
-          <h3 className="text-xl font-semibold mb-4 text-green-700">
-            Final Standings
+        <div className="mt-8 space-y-6">
+          <h3
+            className="text-2xl font-bold mb-4 uppercase tracking-wide"
+            style={{ color: theme.text.primary }}
+          >
+            Projected Final Standings
           </h3>
 
-          <div className="flex gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Standings Table */}
-            <div>
-              <table className="table-auto border-collapse overflow-hidden rounded-md">
-                <thead className="bg-green-600 text-white">
+            <div
+              className="rounded overflow-hidden"
+              style={{
+                backgroundColor: theme.bg.secondary,
+                border: `1px solid ${theme.border}`,
+              }}
+            >
+              <table className="w-full">
+                <thead style={{ backgroundColor: theme.bg.tertiary }}>
                   <tr>
-                    <th className="px-3 py-2 text-left font-semibold">#</th>
-                    <th className="px-3 py-2 text-left font-semibold">Team</th>
-                    <th className="px-3 py-2 text-center font-semibold">W</th>
-                    <th className="px-3 py-2 text-center font-semibold">L</th>
+                    <th
+                      className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider"
+                      style={{ color: theme.text.muted }}
+                    >
+                      Rank
+                    </th>
+                    <th
+                      className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider"
+                      style={{ color: theme.text.muted }}
+                    >
+                      Team
+                    </th>
+                    <th
+                      className="px-4 py-3 text-center text-xs font-bold uppercase tracking-wider"
+                      style={{ color: theme.text.muted }}
+                    >
+                      W
+                    </th>
+                    <th
+                      className="px-4 py-3 text-center text-xs font-bold uppercase tracking-wider"
+                      style={{ color: theme.text.muted }}
+                    >
+                      L
+                    </th>
                   </tr>
                 </thead>
-                <tbody className="bg-gray-50">
+                <tbody style={{ borderTop: `1px solid ${theme.border}` }}>
                   {result.standings.map((row, idx) => (
                     <tr
                       key={row.team}
-                      className={`
-                        ${idx < 2 ? "bg-green-100 font-semibold" : ""}
-                        ${idx === 1 ? "border-b-2 border-green-400" : ""}
-                        hover:bg-green-50 transition-colors
-                      `}
+                      className="transition-colors"
+                      style={{
+                        backgroundColor:
+                          idx < 2 ? `${theme.accent}1A` : "transparent",
+                        borderTop:
+                          idx > 0 ? `1px solid ${theme.border}` : "none",
+                      }}
+                      onMouseEnter={(e) =>
+                        (e.currentTarget.style.backgroundColor = theme.bg.hover)
+                      }
+                      onMouseLeave={(e) =>
+                        (e.currentTarget.style.backgroundColor =
+                          idx < 2 ? `${theme.accent}1A` : "transparent")
+                      }
                     >
-                      <td className="px-3 py-2 text-gray-500">{idx + 1}</td>
-                      <td className="px-3 py-2 font-medium">
+                      <td
+                        className="px-4 py-3 font-bold"
+                        style={{ color: theme.text.muted }}
+                      >
+                        {idx + 1}
+                      </td>
+                      <td
+                        className="px-4 py-3 font-bold"
+                        style={{ color: theme.text.primary }}
+                      >
                         {row.team}
                         {idx < 2 && (
-                          <span className="ml-2 text-xs text-green-600">
+                          <span
+                            className="ml-2 text-xs font-bold"
+                            style={{ color: theme.accent }}
+                          >
                             ★ CCG
                           </span>
                         )}
                       </td>
-                      <td className="px-3 py-2 text-center">{row.confWins}</td>
-                      <td className="px-3 py-2 text-center">
+                      <td
+                        className="px-4 py-3 text-center font-bold"
+                        style={{ color: theme.text.primary }}
+                      >
+                        {row.confWins}
+                      </td>
+                      <td
+                        className="px-4 py-3 text-center font-bold"
+                        style={{ color: theme.text.primary }}
+                      >
                         {row.confLosses}
                       </td>
                     </tr>
@@ -288,60 +464,107 @@ export function GamePicker({ conference, unplayedGames }: Props) {
             </div>
 
             {/* Tiebreaker Info */}
-            {result.tiebreakerInfo.length > 0 && (
-              <div className="flex-1">
-                <h4 className="text-lg font-medium mb-3 text-gray-700">
-                  Tiebreakers Applied
-                </h4>
+            <div>
+              <h4
+                className="text-lg font-bold mb-3 uppercase tracking-wide"
+                style={{ color: theme.text.primary }}
+              >
+                Tiebreakers Applied
+              </h4>
+              {result.tiebreakerInfo.length > 0 ? (
                 <div className="space-y-3">
                   {result.tiebreakerInfo.map((info, idx) => (
                     <div
                       key={idx}
-                      className="p-3 bg-amber-50 border border-amber-200 rounded-lg"
+                      className="rounded p-4"
+                      style={{
+                        backgroundColor: theme.bg.secondary,
+                        border: `1px solid ${theme.border}`,
+                      }}
                     >
-                      <div className="font-medium text-amber-800 mb-1">
+                      <div
+                        className="font-bold mb-2"
+                        style={{ color: theme.text.primary }}
+                      >
                         {info.teams.join(", ")}
                       </div>
-                      <div className="text-sm text-amber-700">
+                      <div
+                        className="text-sm mb-2"
+                        style={{ color: theme.text.muted }}
+                      >
                         {info.rulesApplied.map((rule, rIdx) => (
                           <span key={rule}>
-                            {rIdx > 0 && " → "}
-                            <span className="font-medium">
+                            {rIdx > 0 && (
+                              <span
+                                className="mx-1"
+                                style={{ color: theme.accent }}
+                              >
+                                →
+                              </span>
+                            )}
+                            <span className="font-semibold">
                               {getRuleDescription(rule)}
                             </span>
                           </span>
                         ))}
                       </div>
                       {info.explanations.length > 0 && (
-                        <ul className="mt-2 text-xs text-amber-600 list-disc list-inside space-y-0.5">
+                        <ul
+                          className="mt-2 text-xs space-y-1"
+                          style={{ color: theme.text.muted }}
+                        >
                           {info.explanations.map((exp, eIdx) => (
-                            <li key={eIdx}>{exp}</li>
+                            <li key={eIdx} className="flex items-start">
+                              <span
+                                className="mr-2"
+                                style={{ color: theme.accent }}
+                              >
+                                •
+                              </span>
+                              <span>{exp}</span>
+                            </li>
                           ))}
                         </ul>
                       )}
                     </div>
                   ))}
                 </div>
-              </div>
-            )}
-
-            {result.tiebreakerInfo.length === 0 && (
-              <div className="flex-1">
-                <div className="p-3 bg-gray-100 border border-gray-200 rounded-lg text-gray-600">
+              ) : (
+                <div
+                  className="rounded p-4"
+                  style={{
+                    backgroundColor: theme.bg.secondary,
+                    border: `1px solid ${theme.border}`,
+                    color: theme.text.muted,
+                  }}
+                >
                   No tiebreakers needed - all positions determined by record.
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
 
           {/* Conference Championship Game */}
-          <div className="mt-6 p-4 bg-linear-to-r from-green-500 to-green-600 rounded-lg text-white">
-            <h4 className="text-lg font-bold mb-2">
+          <div
+            className="rounded-lg p-6"
+            style={{
+              background: `linear-gradient(to right, ${theme.accent}, #8c0d1f)`,
+              border: `1px solid ${theme.accent}`,
+            }}
+          >
+            <h4
+              className="text-sm font-bold mb-2 uppercase tracking-wider"
+              style={{ color: "rgba(255,255,255,0.8)" }}
+            >
               Conference Championship Game
             </h4>
-            <div className="text-2xl font-bold">
-              #{1} {result.standings[0].team}
-              <span className="mx-3 text-green-200">vs</span>#{2}{" "}
+            <div className="text-2xl font-bold" style={{ color: "#ffffff" }}>
+              <span style={{ color: "rgba(255,255,255,0.6)" }}>#1</span>{" "}
+              {result.standings[0].team}
+              <span className="mx-4" style={{ color: "rgba(255,255,255,0.6)" }}>
+                vs
+              </span>
+              <span style={{ color: "rgba(255,255,255,0.6)" }}>#2</span>{" "}
               {result.standings[1].team}
             </div>
           </div>
@@ -349,7 +572,14 @@ export function GamePicker({ conference, unplayedGames }: Props) {
       )}
 
       {!allPicked && picks.size > 0 && (
-        <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg text-blue-700">
+        <div
+          className="p-4 rounded"
+          style={{
+            backgroundColor: `${theme.accent}1A`,
+            border: `1px solid ${theme.accent}33`,
+            color: theme.text.primary,
+          }}
+        >
           Pick {unplayedGames.length - picks.size} more game
           {unplayedGames.length - picks.size !== 1 ? "s" : ""} to see the final
           standings.

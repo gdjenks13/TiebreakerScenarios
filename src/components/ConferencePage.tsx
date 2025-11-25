@@ -7,11 +7,29 @@ import { GamePicker } from "@components/GamePicker";
 
 type ViewMode = "scenarios" | "picker";
 
-interface Props {
-  confKey: string;
+interface Theme {
+  isDark: boolean;
+  bg: {
+    primary: string;
+    secondary: string;
+    tertiary: string;
+    hover: string;
+  };
+  text: {
+    primary: string;
+    secondary: string;
+    muted: string;
+  };
+  border: string;
+  accent: string;
 }
 
-export function ConferencePage({ confKey }: Props) {
+interface Props {
+  confKey: string;
+  theme: Theme;
+}
+
+export function ConferencePage({ confKey, theme }: Props) {
   const [viewMode, setViewMode] = useState<ViewMode>("scenarios");
   const scenarioData = getScenarioData(confKey);
 
@@ -31,9 +49,24 @@ export function ConferencePage({ confKey }: Props) {
 
   if (!scenarioData) {
     return (
-      <div className="p-4 bg-red-100 text-red-700 rounded">
+      <div
+        className="p-4 rounded border"
+        style={{
+          backgroundColor: `${theme.accent}10`,
+          color: theme.accent,
+          borderColor: `${theme.accent}30`,
+        }}
+      >
         No scenario data found for {confKey}. Run{" "}
-        <code className="bg-red-200 px-1 rounded">bun run generate</code> first.
+        <code
+          className="px-2 py-1 rounded font-mono text-sm"
+          style={{
+            backgroundColor: `${theme.accent}20`,
+          }}
+        >
+          bun run generate
+        </code>{" "}
+        first.
       </div>
     );
   }
@@ -42,37 +75,51 @@ export function ConferencePage({ confKey }: Props) {
 
   return (
     <>
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-2xl font-bold">{confKey}</h2>
+          <h2
+            className="text-3xl font-bold mb-1"
+            style={{ color: theme.text.primary }}
+          >
+            {confKey.toUpperCase()}
+          </h2>
           {generatedAt && (
-            <p className="text-xs text-gray-500">
-              Last generated: {new Date(generatedAt).toLocaleString()}
+            <p className="text-xs" style={{ color: theme.text.secondary }}>
+              Last updated: {new Date(generatedAt).toLocaleString()}
             </p>
           )}
         </div>
 
         {/* View Mode Tabs */}
-        <div className="flex bg-gray-100 rounded-lg p-1">
+        <div
+          className="flex rounded"
+          style={{
+            backgroundColor: theme.bg.secondary,
+            border: `1px solid ${theme.border}`,
+          }}
+        >
           <button
             onClick={() => setViewMode("scenarios")}
-            className={`px-4 py-2 rounded-md font-medium transition-colors ${
-              viewMode === "scenarios"
-                ? "bg-blue-500 text-white shadow"
-                : "text-gray-600 hover:text-gray-800"
-            }`}
+            className="px-6 py-2.5 text-sm font-bold transition-colors"
+            style={{
+              backgroundColor:
+                viewMode === "scenarios" ? theme.accent : "transparent",
+              color:
+                viewMode === "scenarios" ? "#ffffff" : theme.text.secondary,
+            }}
           >
-            Scenario Analysis
+            SCENARIO ANALYSIS
           </button>
           <button
             onClick={() => setViewMode("picker")}
-            className={`px-4 py-2 rounded-md font-medium transition-colors ${
-              viewMode === "picker"
-                ? "bg-blue-500 text-white shadow"
-                : "text-gray-600 hover:text-gray-800"
-            }`}
+            className="px-6 py-2.5 text-sm font-bold transition-colors"
+            style={{
+              backgroundColor:
+                viewMode === "picker" ? theme.accent : "transparent",
+              color: viewMode === "picker" ? "#ffffff" : theme.text.secondary,
+            }}
           >
-            Game Picker
+            GAME PICKER
           </button>
         </div>
       </div>
@@ -83,96 +130,237 @@ export function ConferencePage({ confKey }: Props) {
           key={confKey}
           conference={conference}
           unplayedGames={unplayedGames}
+          theme={theme}
         />
       )}
 
       {/* Scenario Analysis View */}
       {viewMode === "scenarios" && (
         <>
-          <div className="flex flex-wrap gap-8">
-            <div className="flex-1 min-w-0 max-w-[45%]">
-              <h3 className="text-xl font-semibold">Current Standings</h3>
-              <table className="mt-4 w-full table-auto border-collapse overflow-hidden rounded-md">
-                <thead className="bg-blue-600 text-white">
-                  <tr>
-                    <th className="px-2 py-1 text-left font-semibold">Team</th>
-                    <th className="px-2 py-1 text-center font-semibold">
-                      Wins
-                    </th>
-                    <th className="px-2 py-1 text-center font-semibold">
-                      Losses
-                    </th>
-                  </tr>
-                </thead>
-
-                <tbody className="bg-gray-100">
-                  {standings.map((row: TeamRecord) => (
-                    <tr
-                      key={row.team}
-                      className="even:bg-gray-200 hover:bg-blue-100 transition-colors"
-                    >
-                      <td className="px-2 py-1 text-left font-bold">
-                        {row.team}
-                      </td>
-                      <td className="px-2 py-1 text-center font-semibold">
-                        {row.confWins}
-                      </td>
-                      <td className="px-2 py-1 text-center font-semibold">
-                        {row.confLosses}
-                      </td>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Current Standings */}
+            <div>
+              <h3
+                className="text-lg font-bold mb-3 uppercase tracking-wide"
+                style={{ color: theme.text.primary }}
+              >
+                Current Standings
+              </h3>
+              <div
+                className="rounded overflow-hidden"
+                style={{
+                  backgroundColor: theme.bg.secondary,
+                  border: `1px solid ${theme.border}`,
+                }}
+              >
+                <table className="w-full">
+                  <thead style={{ backgroundColor: theme.bg.tertiary }}>
+                    <tr>
+                      <th
+                        className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider"
+                        style={{ color: theme.text.secondary }}
+                      >
+                        Team
+                      </th>
+                      <th
+                        className="px-4 py-3 text-center text-xs font-bold uppercase tracking-wider"
+                        style={{ color: theme.text.secondary }}
+                      >
+                        W
+                      </th>
+                      <th
+                        className="px-4 py-3 text-center text-xs font-bold uppercase tracking-wider"
+                        style={{ color: theme.text.secondary }}
+                      >
+                        L
+                      </th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody style={{ borderTop: `1px solid ${theme.border}` }}>
+                    {standings.map((row: TeamRecord, idx: number) => (
+                      <tr
+                        key={row.team}
+                        className="transition-colors"
+                        style={{
+                          borderTop:
+                            idx > 0 ? `1px solid ${theme.border}` : "none",
+                        }}
+                        onMouseEnter={(e) =>
+                          (e.currentTarget.style.backgroundColor =
+                            theme.bg.hover)
+                        }
+                        onMouseLeave={(e) =>
+                          (e.currentTarget.style.backgroundColor =
+                            "transparent")
+                        }
+                      >
+                        <td
+                          className="px-4 py-3 font-semibold"
+                          style={{ color: theme.text.primary }}
+                        >
+                          <span
+                            className="mr-2 text-sm"
+                            style={{ color: theme.text.secondary }}
+                          >
+                            {idx + 1}
+                          </span>
+                          {row.team}
+                        </td>
+                        <td
+                          className="px-4 py-3 text-center font-bold"
+                          style={{ color: theme.text.primary }}
+                        >
+                          {row.confWins}
+                        </td>
+                        <td
+                          className="px-4 py-3 text-center font-bold"
+                          style={{ color: theme.text.primary }}
+                        >
+                          {row.confLosses}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
 
-            <div className="flex-1 min-w-0 max-w-[45%]">
-              <h3 className="text-xl font-semibold">
+            {/* Remaining Games */}
+            <div>
+              <h3
+                className="text-lg font-bold mb-3 uppercase tracking-wide"
+                style={{ color: theme.text.primary }}
+              >
                 Remaining Games ({unplayedGames.length})
               </h3>
-              <table className="mt-4 w-full table-auto border-collapse overflow-hidden rounded-md">
-                <thead className="bg-blue-600 text-white">
-                  <tr>
-                    <th className="px-2 py-1 text-left font-semibold">Home</th>
-                    <th className="px-2 py-1 text-left font-semibold">Away</th>
-                  </tr>
-                </thead>
-
-                <tbody className="bg-gray-100 text-gray-800">
-                  {unplayedGames.map((g: Game) => (
-                    <tr
-                      key={g.id}
-                      className="even:bg-gray-200 hover:bg-blue-100 transition-colors"
-                    >
-                      <td className="px-1 py-1 font-medium">{g.loser}</td>
-                      <td className="px-1 py-1 font-medium">{g.winner}</td>
+              <div
+                className="rounded overflow-hidden"
+                style={{
+                  backgroundColor: theme.bg.secondary,
+                  border: `1px solid ${theme.border}`,
+                }}
+              >
+                <table className="w-full">
+                  <thead style={{ backgroundColor: theme.bg.tertiary }}>
+                    <tr>
+                      <th
+                        className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider"
+                        style={{ color: theme.text.secondary }}
+                      >
+                        Home
+                      </th>
+                      <th
+                        className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider"
+                        style={{ color: theme.text.secondary }}
+                      >
+                        Away
+                      </th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody style={{ borderTop: `1px solid ${theme.border}` }}>
+                    {unplayedGames.map((g: Game, idx: number) => (
+                      <tr
+                        key={g.id}
+                        className="transition-colors"
+                        style={{
+                          borderTop:
+                            idx > 0 ? `1px solid ${theme.border}` : "none",
+                        }}
+                        onMouseEnter={(e) =>
+                          (e.currentTarget.style.backgroundColor =
+                            theme.bg.hover)
+                        }
+                        onMouseLeave={(e) =>
+                          (e.currentTarget.style.backgroundColor =
+                            "transparent")
+                        }
+                      >
+                        <td
+                          className="px-4 py-3 font-semibold"
+                          style={{ color: theme.text.primary }}
+                        >
+                          {g.loser}
+                        </td>
+                        <td
+                          className="px-4 py-3 font-semibold"
+                          style={{ color: theme.text.primary }}
+                        >
+                          {g.winner}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
 
           {scenarios && scenarios.length > 0 && (
-            <div className="mt-4">
-              <h3 className="text-xl font-semibold text-blue-600">
-                Scenarios: {scenarios.length}
+            <div className="mt-8">
+              <h3
+                className="text-2xl font-bold mb-4"
+                style={{ color: theme.text.primary }}
+              >
+                <span style={{ color: theme.accent }}>{scenarios.length}</span>{" "}
+                POSSIBLE SCENARIOS
               </h3>
 
-              <div className="mt-4">
-                <h4 className="text-lg font-medium text-gray-700 mb-2">
-                  Top 2 Counts
-                </h4>
-                <table className="min-w-3/4 border border-gray-300 rounded-lg overflow-hidden">
-                  <thead className="bg-gray-100 text-gray-700">
+              <div
+                className="rounded overflow-hidden"
+                style={{
+                  backgroundColor: theme.bg.secondary,
+                  border: `1px solid ${theme.border}`,
+                }}
+              >
+                <div
+                  className="px-4 py-3"
+                  style={{
+                    backgroundColor: theme.bg.tertiary,
+                    borderBottom: `1px solid ${theme.border}`,
+                  }}
+                >
+                  <h4
+                    className="text-sm font-bold uppercase tracking-wider"
+                    style={{ color: theme.text.secondary }}
+                  >
+                    Championship Game Probabilities
+                  </h4>
+                </div>
+                <table className="w-full">
+                  <thead
+                    style={{
+                      backgroundColor: theme.bg.tertiary,
+                      borderBottom: `1px solid ${theme.border}`,
+                    }}
+                  >
                     <tr>
-                      <th className="p-2 text-left">Team</th>
-                      <th className="p-2 text-left">Top 2 Count</th>
-                      <th className="p-2 text-left">Top 2 %</th>
-                      <th className="p-2 text-left">Scenarios</th>
+                      <th
+                        className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider"
+                        style={{ color: theme.text.secondary }}
+                      >
+                        Team
+                      </th>
+                      <th
+                        className="px-4 py-3 text-center text-xs font-bold uppercase tracking-wider"
+                        style={{ color: theme.text.secondary }}
+                      >
+                        Scenarios
+                      </th>
+                      <th
+                        className="px-4 py-3 text-center text-xs font-bold uppercase tracking-wider"
+                        style={{ color: theme.text.secondary }}
+                      >
+                        Probability
+                      </th>
+                      <th
+                        className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider"
+                        style={{ color: theme.text.secondary }}
+                      >
+                        Paths to Championship
+                      </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-200">
+                  <tbody style={{ borderTop: `1px solid ${theme.border}` }}>
                     {standings
                       .map((s) => {
                         const hits = scenarios.filter((sc) =>
@@ -203,91 +391,208 @@ export function ConferencePage({ confKey }: Props) {
                           const requirements = teamRequirements[s.team];
 
                           return (
-                            <tr key={s.team} className="hover:bg-gray-50">
-                              <td className="p-2 font-medium">{s.team}</td>
-                              <td className="p-2">{count}</td>
-                              <td className="p-2">{pct}%</td>
-                              <td className="p-2">
+                            <tr
+                              key={s.team}
+                              className="transition-colors"
+                              onMouseEnter={(e) =>
+                                (e.currentTarget.style.backgroundColor =
+                                  theme.bg.hover)
+                              }
+                              onMouseLeave={(e) =>
+                                (e.currentTarget.style.backgroundColor =
+                                  "transparent")
+                              }
+                            >
+                              <td
+                                className="px-4 py-4 font-bold text-base"
+                                style={{ color: theme.text.primary }}
+                              >
+                                {s.team}
+                              </td>
+                              <td
+                                className="px-4 py-4 text-center font-semibold"
+                                style={{ color: theme.text.primary }}
+                              >
+                                {count}
+                              </td>
+                              <td className="px-4 py-4 text-center">
+                                <span
+                                  className="text-lg font-bold"
+                                  style={{
+                                    color:
+                                      parseFloat(pct) > 75
+                                        ? "#00c853"
+                                        : parseFloat(pct) > 50
+                                        ? "#fdd835"
+                                        : parseFloat(pct) > 25
+                                        ? "#ff9800"
+                                        : theme.text.muted,
+                                  }}
+                                >
+                                  {pct}%
+                                </span>
+                              </td>
+                              <td className="px-4 py-4">
                                 {requirements && requirements.top2Count > 0 && (
-                                  <div className="mb-1 p-2 bg-blue-50 rounded border border-blue-200">
-                                    <h5 className="font-semibold text-sm text-blue-800 mb-1">
-                                      Paths for <strong>{s.team}</strong>:
-                                    </h5>
+                                  <div className="space-y-2">
                                     {requirements.sufficientConditions.length >
                                     0 ? (
-                                      <div className="space-y-2">
-                                        <p className="text-xs text-gray-600">
-                                          <strong>Guaranteed Top 2 if:</strong>
+                                      <div className="space-y-1">
+                                        <p
+                                          className="text-xs font-bold uppercase tracking-wide mb-2"
+                                          style={{ color: theme.text.muted }}
+                                        >
+                                          Guaranteed if:
                                         </p>
-                                        <div className="max-h-64 overflow-y-auto">
+                                        <div className="max-h-48 overflow-y-auto space-y-1">
                                           {requirements.sufficientConditions.map(
                                             (condition, idx) => (
                                               <div
                                                 key={idx}
-                                                className="text-xs bg-green-100 px-2 py-1 rounded mb-1"
+                                                className="text-xs px-3 py-2 rounded"
+                                                style={{
+                                                  backgroundColor: theme.isDark
+                                                    ? "#0b2e1a" /* dark green */
+                                                    : "#e6f4ea" /* light green */,
+                                                  border: `1px solid ${
+                                                    theme.isDark
+                                                      ? "#14532d"
+                                                      : "#b7e4c7"
+                                                  }`,
+                                                }}
                                               >
-                                                {condition.outcomes.map(
-                                                  (outcome, oIdx) => (
-                                                    <span key={oIdx}>
-                                                      {oIdx > 0 && " AND "}
-                                                      <strong>
-                                                        {outcome.winner}
-                                                      </strong>{" "}
-                                                      beats{" "}
-                                                      <strong>
-                                                        {outcome.loser}
-                                                      </strong>
-                                                    </span>
-                                                  )
-                                                )}
-                                                <span className="text-gray-500 ml-1">
-                                                  (
+                                                <div
+                                                  style={{
+                                                    color: theme.text.primary,
+                                                  }}
+                                                >
+                                                  {condition.outcomes.map(
+                                                    (outcome, oIdx) => (
+                                                      <span key={oIdx}>
+                                                        {oIdx > 0 && (
+                                                          <span
+                                                            style={{
+                                                              color:
+                                                                theme.text
+                                                                  .muted,
+                                                            }}
+                                                          >
+                                                            {" "}
+                                                            AND{" "}
+                                                          </span>
+                                                        )}
+                                                        <span className="font-semibold">
+                                                          {outcome.winner}
+                                                        </span>{" "}
+                                                        <span
+                                                          style={{
+                                                            color:
+                                                              theme.text.muted,
+                                                          }}
+                                                        >
+                                                          beats
+                                                        </span>{" "}
+                                                        <span className="font-semibold">
+                                                          {outcome.loser}
+                                                        </span>
+                                                      </span>
+                                                    )
+                                                  )}
+                                                </div>
+                                                <div
+                                                  className="mt-1 text-[10px]"
+                                                  style={{
+                                                    color: theme.text.muted,
+                                                  }}
+                                                >
                                                   {
                                                     condition.guaranteedScenarios
                                                   }
                                                   /{requirements.totalScenarios}{" "}
-                                                  scenarios)
-                                                </span>
+                                                  scenarios
+                                                </div>
                                               </div>
                                             )
                                           )}
                                         </div>
                                       </div>
                                     ) : (
-                                      <p className="text-xs text-gray-600">
-                                        No paths found - team cannot make top 2
+                                      <p
+                                        className="text-xs"
+                                        style={{ color: theme.text.muted }}
+                                      >
+                                        No guaranteed paths available
                                       </p>
                                     )}
 
                                     {requirements.blockingConditions.length >
                                       0 && (
-                                      <div className="space-y-2 mt-3">
-                                        <p className="text-xs text-gray-600">
-                                          <strong>Eliminated if:</strong>
+                                      <div className="space-y-1 mt-3">
+                                        <p
+                                          className="text-xs font-bold uppercase tracking-wide mb-2"
+                                          style={{ color: theme.accent }}
+                                        >
+                                          Eliminated if:
                                         </p>
-                                        {requirements.blockingConditions.map(
-                                          (condition, idx) => (
-                                            <div
-                                              key={idx}
-                                              className="text-xs bg-red-100 px-2 py-1 rounded"
-                                            >
-                                              {condition.outcomes.map(
-                                                (outcome, oIdx) => (
-                                                  <span key={oIdx}>
-                                                    {oIdx > 0 && " AND "}
-                                                    <strong>
-                                                      {outcome.winner}
-                                                    </strong>{" "}
-                                                    beats{" "}
-                                                    <strong>
-                                                      {outcome.loser}
-                                                    </strong>
-                                                  </span>
-                                                )
-                                              )}
-                                            </div>
-                                          )
-                                        )}
+                                        <div className="space-y-1">
+                                          {requirements.blockingConditions.map(
+                                            (condition, idx) => (
+                                              <div
+                                                key={idx}
+                                                className="text-xs px-3 py-2 rounded"
+                                                style={{
+                                                  backgroundColor: theme.isDark
+                                                    ? "#3a0e12" /* dark red */
+                                                    : "#fee2e2" /* light red */,
+                                                  border: `1px solid ${
+                                                    theme.isDark
+                                                      ? "#7f1d1d"
+                                                      : "#fecaca"
+                                                  }`,
+                                                }}
+                                              >
+                                                <div
+                                                  style={{
+                                                    color: theme.text.primary,
+                                                  }}
+                                                >
+                                                  {condition.outcomes.map(
+                                                    (outcome, oIdx) => (
+                                                      <span key={oIdx}>
+                                                        {oIdx > 0 && (
+                                                          <span
+                                                            style={{
+                                                              color:
+                                                                theme.text
+                                                                  .muted,
+                                                            }}
+                                                          >
+                                                            {" "}
+                                                            AND{" "}
+                                                          </span>
+                                                        )}
+                                                        <span className="font-semibold">
+                                                          {outcome.winner}
+                                                        </span>{" "}
+                                                        <span
+                                                          style={{
+                                                            color:
+                                                              theme.text.muted,
+                                                          }}
+                                                        >
+                                                          beats
+                                                        </span>{" "}
+                                                        <span className="font-semibold">
+                                                          {outcome.loser}
+                                                        </span>
+                                                      </span>
+                                                    )
+                                                  )}
+                                                </div>
+                                              </div>
+                                            )
+                                          )}
+                                        </div>
                                       </div>
                                     )}
                                   </div>
