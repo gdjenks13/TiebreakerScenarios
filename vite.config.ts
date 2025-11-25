@@ -8,6 +8,15 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": "/src",
+      "@lib": "/src/lib",
+      "@components": "/src/components",
+      "@types": "/src/types.ts",
+      "@tiebreakers": "/src/lib/tiebreakers",
+      "@standings": "/src/lib/standings",
+      "@data": "/src/lib/data",
+      "@scenarios": "/src/lib/scenarios",
+      "@simulation": "/src/lib/simulation",
+      "@constants": "/src/lib/constants",
     },
   },
 });

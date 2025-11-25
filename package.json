@@ -5,7 +5,6 @@
   "type": "module",
   "scripts": {
     "generate": "bun run scripts/generateScenarios.ts",
-    "predev": "bun run generate",
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",

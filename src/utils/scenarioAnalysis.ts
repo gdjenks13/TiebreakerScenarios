@@ -1,4 +1,4 @@
-import type { Scenario, Game } from "../types";
+import type { Scenario, Game } from "@types";
 
 export type GameOutcome = {
   game: Game;

@@ -1,4 +1,4 @@
-import type { ConferenceData, Game } from "../types";
+import type { ConferenceData, Game } from "@types";
 
 export function parseConferenceCsv(name: string, raw: string): ConferenceData {
   const lines = raw

@@ -10,6 +10,7 @@ export type Game = {
 export type TieBreakerResult = {
   team: string;
   winner: boolean;
+  explanation?: string; // Detailed explanation of why this team won/lost the tiebreaker
 };
 
 export type TeamRecord = {

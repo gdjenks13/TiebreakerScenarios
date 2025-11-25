@@ -1,7 +1,7 @@
-import type { ConferenceData, Game, TeamRecord } from "../types";
-import { computeStandings } from "./standings";
-import { applyTieBreakers } from "./tiebreakers";
-import { MAX_SIMULATION } from "./constants";
+import type { ConferenceData, Game, TeamRecord } from "@types";
+import { computeStandings } from "@standings";
+import { applyTieBreakers } from "@tiebreakers";
+import { MAX_SIMULATION } from "@constants";
 
 export type MinimalCondition = {
   gameOutcomes: Array<{ game: Game; mustWin: string }>;
@@ -137,13 +137,12 @@ function resolveStandings(
     }
 
     if (tiedGroup.length > 1) {
-      const gamesForGroup = conf.games.filter(
-        (g) => tiedGroup.includes(g.winner) || tiedGroup.includes(g.loser)
-      );
+      // Pass all conference games and standings for proper tiebreaker resolution
       const resolvedResult = applyTieBreakers(
         conf.name,
         tiedGroup,
-        gamesForGroup
+        conf.games,
+        standings
       );
       resolvedResult.order.forEach((t) => {
         const rec = standings.find((r) => r.team === t);

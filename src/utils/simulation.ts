@@ -1,7 +1,7 @@
-import type { ConferenceData, Game, Scenario, TeamRecord } from "../types";
-import { MAX_SIMULATION } from "./constants";
-import { computeStandings } from "./standings";
-import { applyTieBreakers } from "./tiebreakers";
+import type { ConferenceData, Game, Scenario, TeamRecord } from "@types";
+import { MAX_SIMULATION } from "@constants";
+import { computeStandings } from "@standings";
+import { applyTieBreakers } from "@tiebreakers";
 
 export function getUnplayedGames(conf: ConferenceData): Game[] {
   return conf.games.filter((g) => !g.played);
@@ -69,13 +69,13 @@ export function simulateConference(conf: ConferenceData): Scenario[] {
         i++;
       }
       if (tiedGroup.length > 1) {
-        const gamesForGroup = newConf.games.filter(
-          (g) => tiedGroup.includes(g.winner) || tiedGroup.includes(g.loser)
-        );
+        // Pass ALL conference games, not just games involving the tied group
+        // This is needed for tiebreakers like "combined opponent win %"
         const resolvedResult = applyTieBreakers(
           newConf.name,
           tiedGroup,
-          gamesForGroup
+          newConf.games,
+          finalStandings
         );
         appliedRules.push(...resolvedResult.applied);
         resolvedResult.order.forEach((t) => {

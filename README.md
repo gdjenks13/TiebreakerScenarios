@@ -1,5 +1,53 @@
 # Tie Breaker Scenarios
 
+A React + TypeScript application for analyzing college football conference championship scenarios and tiebreaker rules.
+
+## Project Structure
+
+This project follows modern React conventions with a clean separation of concerns:
+
+```
+src/
+├── components/          # React components
+│   ├── App.tsx
+│   ├── ConferencePage.tsx
+│   └── GamePicker.tsx
+├── lib/                 # Domain logic organized by feature
+│   ├── constants/       # Application constants
+│   ├── data/            # CSV parsing and data loading
+│   ├── scenarios/       # Scenario analysis and data management
+│   ├── simulation/      # Conference simulation engine
+│   ├── standings/       # Standings computation
+│   └── tiebreakers/     # Tiebreaker rule implementations
+├── data/                # Static data files (CSV, JSON)
+├── types.ts             # TypeScript type definitions
+└── utils/               # Legacy utility files (re-exported via lib/)
+```
+
+### Path Aliases
+
+The project uses TypeScript path aliases for clean imports:
+
+- `@types` - Type definitions
+- `@components/*` - React components
+- `@lib/*` - All library modules
+- `@tiebreakers` - Tiebreaker logic
+- `@standings` - Standings computation
+- `@scenarios` - Scenario analysis
+- `@simulation` - Simulation engine
+- `@data` - Data loading utilities
+- `@constants` - Application constants
+
+Example:
+
+```typescript
+import { computeStandings } from "@standings";
+import { applyTieBreakers } from "@tiebreakers";
+import type { ConferenceData } from "@types";
+```
+
+## Conference Tiebreaker Rules
+
 AAC: https://theamerican.org/documents/2024/10/21/2024_FB_Tiebreakers.pdf
 
 ACC: https://theacc.com/documents/2023/5/17/ACC_FOOTBALL_TIEBREAKER_POLICY.pdf

@@ -1,4 +1,4 @@
-import type { ConferenceData, TeamRecord } from "../types";
+import type { ConferenceData, TeamRecord } from "@types";
 
 export function computeStandings(conf: ConferenceData): TeamRecord[] {
   const teamsMap: Map<string, TeamRecord> = new Map();
