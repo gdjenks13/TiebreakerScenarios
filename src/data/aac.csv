@@ -43,11 +43,11 @@ Navy,41,South Florida,38
 North Texas,53,Alabama-Birmingham,24
 Texas-San Antonio,28,Charlotte,7
 Tulane,35,Florida Atlantic,24
-East Carolina,,Texas-San Antonio,
-North Texas,,Rice,
-South Florida,,Alabama-Birmingham,
-Tulane,,Temple,
-Tulsa,,Army,
+Texas-San Antonio,58,East Carolina,24
+North Texas,56,Rice,24
+South Florida,48,Alabama-Birmingham,18
+Tulane,37,Temple,13
+Tulsa,26,Army,25
 Navy,,Memphis,
 Temple,,North Texas,
 Alabama-Birmingham,,Tulsa,
@@ -55,4 +55,3 @@ Army,,Texas-San Antonio,
 Charlotte,,Tulane,
 East Carolina,,Florida Atlantic,
 Rice,,South Florida,
-Army,,Navy,

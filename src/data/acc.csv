@@ -1,5 +1,4 @@
 Winner,WPts,Loser,LPts
-North Carolina State,35,Virginia,31
 North Carolina State,34,Wake Forest,24
 Georgia Tech,24,Clemson,21
 Stanford,30,Boston College,20
@@ -56,12 +55,12 @@ Georgia Tech,36,Boston College,34
 Miami ,41,North Carolina State,7
 Virginia,34,Duke,17
 Wake Forest,28,North Carolina,12
-Florida State,,North Carolina State,
-California,,Stanford,
-Duke,,North Carolina,
-Louisville,,Southern Methodist,
-Miami ,,Virginia Tech,
-Pittsburgh,,Georgia Tech,
+North Carolina State,21,Florida State,11
+Stanford,31,California,10
+Duke,32,North Carolina,25
+Southern Methodist,38,Louisville,6
+Miami ,34,Virginia Tech,17
+Pittsburgh,42,Georgia Tech,28
 Boston College,,Syracuse,
 Miami ,,Pittsburgh,
 North Carolina,,North Carolina State,
